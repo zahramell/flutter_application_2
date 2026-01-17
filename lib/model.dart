@@ -21,7 +21,8 @@ class AlatModel {
   final String namaAlat;
   final String statusAlat;
 
-  AlatModel({required this.idAlat, required this.namaAlat, required this.statusAlat});
+  AlatModel(
+      {required this.idAlat, required this.namaAlat, required this.statusAlat});
 
   factory AlatModel.fromJson(Map<String, dynamic> json) {
     return AlatModel(
