@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login.dart'; 
+import 'screen/login.dart'; 
 
 // Inisialisasi variabel supabase agar bisa dipanggil di file lain
 final supabase = Supabase.instance.client;
