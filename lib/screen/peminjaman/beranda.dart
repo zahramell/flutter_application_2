@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Tambahkan ini
 import '../../services/supabase_service.dart';
 import '../../models/kategori.dart';
 import '../../models/alat.dart';
@@ -14,14 +15,48 @@ class BerandaScreen extends StatefulWidget {
 }
 
 class _BerandaScreenState extends State<BerandaScreen> {
+  final supabase = Supabase.instance.client; // Inisialisasi Supabase
   final supabaseService = SupabaseService();
   final kategoriService = KategoriService();
+
+  // Variabel untuk data profil
+  String _namaUser = "Loading...";
+  String _fotoUser = "";
 
   List<Alat> _keranjangAlat = [];
   DateTime? _selectedTanggalPinjam;
   DateTime? _selectedTanggalKembali;
   int? _selectedCategoryId;
   String _searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData(); // Panggil fungsi ambil data saat startup
+  }
+
+  // Fungsi ambil data profil dari Supabase
+  Future<void> _fetchUserData() async {
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        final data = await supabase
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (data != null && mounted) {
+          setState(() {
+            _namaUser = data['nama'] ?? "User";
+            _fotoUser = data['foto'] ?? "";
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error profiles: $e");
+    }
+  }
 
   void _toggleKeranjang(Alat alat) {
     if (alat.statusAlat != 'Tersedia') {
@@ -269,33 +304,58 @@ class _BerandaScreenState extends State<BerandaScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // HEADER USER
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Color(0xFFC7D9E5),
-                    backgroundImage:
-                        NetworkImage('https://i.pravatar.cc/150?u=shellya'),
-                  ),
-                  const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Sheliya",
+              Padding(
+                padding: const EdgeInsets.only(
+                    left:
+                        20), // KUNCINYA DI SINI: Sesuaikan angka ini (10-15) sampai lurus
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.transparent,
+                      ),
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: const Color(0xFFEFEFEF),
+                        backgroundImage: _fotoUser.isNotEmpty
+                            ? NetworkImage(_fotoUser)
+                            : null,
+                        child: _fotoUser.isEmpty
+                            ? const Icon(Symbols.person,
+                                color: Color(0xFF34495E), size: 30)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _namaUser,
                           style: GoogleFonts.poppins(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black)),
-                      Text(
-                          widget.role == 'peminjam'
-                              ? "Peminjam"
-                              : widget.role.toUpperCase(),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2C3E50),
+                            height: 1.2,
+                          ),
+                        ),
+                        Text(
+                          "Peminjam",
                           style: GoogleFonts.poppins(
-                              fontSize: 14, color: const Color(0xFF999999))),
-                    ],
-                  ),
-                ],
+                            fontSize: 13,
+                            color: const Color(0xFF999999),
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 25),
 
@@ -303,7 +363,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
               Center(
                 child: Container(
                   width: 321,
-                  height: 40, // Sedikit lebih tinggi untuk kenyamanan input
+                  height: 40,
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   decoration: BoxDecoration(
                       color: const Color(0xFFEFEFEF),

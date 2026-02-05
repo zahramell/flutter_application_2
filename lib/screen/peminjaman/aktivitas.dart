@@ -58,30 +58,19 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Label Aktivitas (Kecil)
+            // BAGIAN HEADER: Memberikan jarak agar tidak mepet ke frame
             Padding(
-              padding: const EdgeInsets.only(left: 25, top: 30),
-              child: Text(
-                "Aktivitas",
-                style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.grey,
-                    fontWeight: FontWeight.w500),
-              ),
-            ),
-
-            // Judul Utama
-            Padding(
-              padding: const EdgeInsets.only(
-                  left: 25, right: 25, top: 5, bottom: 20),
+              padding: const EdgeInsets.fromLTRB(35, 30, 25, 10),
               child: Text(
                 "Sedang Dipinjam",
                 style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black),
+                    color: const Color(0xFF2F4157)),
               ),
             ),
+
+            const SizedBox(height: 10), // Jarak tambahan ke list
 
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -100,7 +89,8 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 100),
+                    // Padding bawah 120 agar item terakhir tidak tertutup Navbar 99px
+                    padding: const EdgeInsets.only(top: 10, bottom: 120),
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final data = snapshot.data![index];
