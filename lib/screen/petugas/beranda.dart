@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BerandaPetugas extends StatefulWidget {
   const BerandaPetugas({super.key});
@@ -10,124 +11,162 @@ class BerandaPetugas extends StatefulWidget {
 }
 
 class _BerandaPetugasState extends State<BerandaPetugas> {
-  // Variabel data (nanti bisa dihubungkan ke Supabase)
-  final String namaPetugas = "Zahramel";
-  final String fotoUser = "";
+  final SupabaseClient supabase = Supabase.instance.client;
+
+  // Variabel untuk menampung data dari database
+  String _namaPetugas = "Memuat...";
+  String _fotoUser = "";
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  // FUNGSI MENGAMBIL DATA DARI SUPABASE
+  Future<void> _fetchUserData() async {
+    try {
+      final user = supabase.auth.currentUser;
+      if (user != null) {
+        // Mengambil data dari tabel 'profiles' berdasarkan ID user yang login
+        final data = await supabase
+            .from('profiles')
+            .select('nama, foto')
+            .eq('id', user.id)
+            .single();
+
+        setState(() {
+          _namaPetugas = data['nama'] ?? "Tanpa Nama";
+          _fotoUser = data['foto'] ?? "";
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          // Padding horizontal 25 agar sejajar dari atas sampai bawah
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- HEADER PROFIL (Sudah Sejajar & Tanpa Biru-biru) ---
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: const Color(0xFFEFEFEF),
-                    backgroundImage:
-                        fotoUser.isNotEmpty ? NetworkImage(fotoUser) : null,
-                    child: fotoUser.isEmpty
-                        ? const Icon(Symbols.person,
-                            color: Color(0xFF34495E), size: 30)
-                        : null,
-                  ),
-                  const SizedBox(width: 15),
-                  Column(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator()) // Loading saat ambil data
+            : RefreshIndicator(
+                onRefresh:
+                    _fetchUserData, // Tarik layar ke bawah untuk refresh data
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // --- HEADER PROFIL ---
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: const Color(0xFFEFEFEF),
+                            // Menggunakan foregroundImage agar foto memenuhi lingkaran
+                            foregroundImage: _fotoUser.isNotEmpty
+                                ? NetworkImage(_fotoUser)
+                                : null,
+                            child: _fotoUser.isEmpty
+                                ? const Icon(Symbols.person,
+                                    color: Color(0xFF34495E), size: 30)
+                                : null,
+                          ),
+                          const SizedBox(width: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _namaPetugas,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF2C3E50),
+                                  height: 1.2,
+                                ),
+                              ),
+                              Text(
+                                "Petugas",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: const Color(0xFF999999),
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // --- KOTAK MENU STATISTIK ---
+                      Row(
+                        children: [
+                          Expanded(
+                              child: _buildMenuBox("3", "Konfirmasi", null)),
+                          const SizedBox(width: 20),
+                          Expanded(
+                              child: _buildMenuBox(
+                                  null, "Kembali", Symbols.account_circle)),
+                        ],
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // --- JUDUL DAFTAR ---
                       Text(
-                        namaPetugas,
+                        "Perlu Disetujui",
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF2C3E50),
-                          height: 1.2,
+                          color: Colors.black,
                         ),
                       ),
-                      Text(
-                        "Petugas",
-                        style: GoogleFonts.poppins(
-                          fontSize: 13,
-                          color: const Color(0xFF999999),
-                          height: 1.2,
+
+                      const SizedBox(height: 15),
+
+                      // --- KARTU DAFTAR PERSETUJUAN ---
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCDE0E9),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildListItem("1.", "Seliya",
+                                "Logitech MK270 Wireless\nCombo _ HSN"),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child:
+                                  Divider(color: Colors.black45, thickness: 1),
+                            ),
+                            _buildListItem("2.", "Ahmad",
+                                "Logitech MK270 Wireless\nCombo _ HSN"),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // --- KOTAK MENU STATISTIK (Konfirmasi & Kembali) ---
-              Row(
-                children: [
-                  // Menu Konfirmasi
-                  Expanded(
-                    child: _buildMenuBox("3", "Konfirmasi", null),
-                  ),
-                  const SizedBox(width: 20),
-                  // Menu Kembali
-                  Expanded(
-                    child:
-                        _buildMenuBox(null, "Kembali", Symbols.account_circle),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 40),
-
-              // --- JUDUL DAFTAR ---
-              Text(
-                "Perlu Disetujui",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
                 ),
               ),
-
-              const SizedBox(height: 15),
-
-              // --- KARTU DAFTAR PERSETUJUAN (Warna Biru Muda) ---
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(
-                      0xFFCDE0E9), // Biru muda sesuai desain petugas
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  children: [
-                    _buildListItem(
-                        "1.", "Seliya", "Logitech MK270 Wireless\nCombo _ HSN"),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(color: Colors.black45, thickness: 1),
-                    ),
-                    _buildListItem(
-                        "2.", "Ahmad", "Logitech MK270 Wireless\nCombo _ HSN"),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // Widget pendukung untuk Kotak Statistik Navy
   Widget _buildMenuBox(String? angka, String label, IconData? icon) {
     return Container(
       height: 90,
@@ -153,7 +192,6 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
     );
   }
 
-  // Widget pendukung untuk Baris Daftar
   Widget _buildListItem(String no, String nama, String barang) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,

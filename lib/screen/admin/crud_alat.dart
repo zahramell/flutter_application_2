@@ -32,7 +32,6 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // Tombol Tambah tetap di sini sesuai permintaan
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2F4157),
         onPressed: () {
@@ -41,10 +40,13 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
         child: const Icon(Icons.add, color: Colors.white, size: 30),
       ),
       body: SafeArea(
+        // top: true memastikan dia menghitung area baterai/jam
+        top: true,
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            
+            // JARAK TAMBAHAN agar tidak nempel banget ke indikator baterai
+            const SizedBox(height: 40),
+
             // 1. SEARCH BAR (Ukuran lebar 321)
             Center(
               child: Container(
@@ -57,18 +59,21 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                 ),
                 child: TextField(
                   textAlignVertical: TextAlignVertical.center,
-                  onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+                  onChanged: (value) =>
+                      setState(() => _searchQuery = value.toLowerCase()),
                   decoration: InputDecoration(
                     hintText: "Pencarian",
-                    hintStyle: GoogleFonts.poppins(color: const Color(0xFF999999), fontSize: 14),
-                    prefixIcon: const Icon(Symbols.search, color: Color(0xFF999999), size: 20),
+                    hintStyle: GoogleFonts.poppins(
+                        color: const Color(0xFF999999), fontSize: 14),
+                    prefixIcon: const Icon(Symbols.search,
+                        color: Color(0xFF999999), size: 20),
                     border: InputBorder.none,
                     isDense: true,
                   ),
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 20),
 
             // 2. FILTER KATEGORI (Horizontal Scroll)
@@ -83,14 +88,17 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                     children: snapshot.data!.map((cat) {
                       bool isActive = _selectedCategoryId == cat['id_kategori'];
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryId = isActive ? null : cat['id_kategori']),
+                        onTap: () => setState(() => _selectedCategoryId =
+                            isActive ? null : cat['id_kategori']),
                         child: Container(
                           margin: const EdgeInsets.only(right: 12),
                           width: 102,
                           height: 31,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: isActive ? const Color(0xFFC7D9E5) : const Color(0xFFEFEFEF),
+                            color: isActive
+                                ? const Color(0xFFC7D9E5)
+                                : const Color(0xFFEFEFEF),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -119,12 +127,15 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  
+
                   final filteredList = snapshot.data?.where((alat) {
-                    final matchCategory = _selectedCategoryId == null || alat.idKategori == _selectedCategoryId;
-                    final matchSearch = alat.namaAlat.toLowerCase().contains(_searchQuery);
-                    return matchCategory && matchSearch;
-                  }).toList() ?? [];
+                        final matchCategory = _selectedCategoryId == null ||
+                            alat.idKategori == _selectedCategoryId;
+                        final matchSearch =
+                            alat.namaAlat.toLowerCase().contains(_searchQuery);
+                        return matchCategory && matchSearch;
+                      }).toList() ??
+                      [];
 
                   return ListView.builder(
                     itemCount: filteredList.length,
@@ -134,8 +145,8 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                       return Center(
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 20),
-                          width: 329, // Ukuran Sesuai Permintaan
-                          height: 142, // Ukuran Sesuai Permintaan
+                          width: 329, 
+                          height: 142, 
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -160,16 +171,20 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                       width: 90,
                                       height: 90,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => 
-                                          const Icon(Icons.image_not_supported, size: 50),
+                                      errorBuilder: (context, error,
+                                              stackTrace) =>
+                                          const Icon(Icons.image_not_supported,
+                                              size: 50),
                                     ),
                                   ),
                                   const SizedBox(width: 15),
                                   // Info Alat
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           alat.namaAlat,
@@ -184,12 +199,14 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                         const SizedBox(height: 8),
                                         // Badge Status
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: alat.statusAlat == 'Tersedia' 
-                                                ? const Color(0xFF27AE60) 
+                                            color: alat.statusAlat == 'Tersedia'
+                                                ? const Color(0xFF27AE60)
                                                 : Colors.orange,
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: Text(
                                             alat.statusAlat,

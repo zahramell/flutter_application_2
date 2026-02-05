@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
         // Jika Petugas
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => MainNavigationPetugas()),
+          MaterialPageRoute(builder: (_) => const MainNavigationPetugas()),
         );
       } else {
         // Jika Peminjam / Siswa (Default)

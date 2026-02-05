@@ -23,7 +23,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
   String _namaUser = "Loading...";
   String _fotoUser = "";
 
-  List<Alat> _keranjangAlat = [];
+  final List<Alat> _keranjangAlat = [];
   DateTime? _selectedTanggalPinjam;
   DateTime? _selectedTanggalKembali;
   int? _selectedCategoryId;

@@ -7,6 +7,7 @@ class BerandaAdmin extends StatefulWidget {
   const BerandaAdmin({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _BerandaAdminState createState() => _BerandaAdminState();
 }
 
@@ -72,46 +73,31 @@ class _BerandaAdminState extends State<BerandaAdmin> {
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF34495E)))
           : SafeArea(
+              // top: false agar kita bisa kontrol jaraknya sendiri pakai MediaQuery
+              top: false,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 20),
-                    Text(
-                      "Dashboard Admin",
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    // MEMBERI JARAK AGAR TIDAK BENTROK DENGAN BAR BATERAI/JAM HP
+                    SizedBox(height: MediaQuery.of(context).padding.top + 20),
 
-                    // HEADER PROFIL (SAMAKAN PERSIS DENGAN PEMINJAM)
+                    // HEADER PROFIL
                     Row(
                       children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors
-                                .blueGrey[50], // Lingkaran luar/bantalan profil
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: CircleAvatar(
-                              radius: 25,
-                              backgroundColor: Colors.white,
-                              backgroundImage: fotoAdmin.isNotEmpty
-                                  ? NetworkImage(fotoAdmin)
-                                  : null,
-                              child: fotoAdmin.isEmpty
-                                  ? const Icon(Symbols.person,
-                                      color: Color(0xFF34495E), size: 28)
-                                  : null,
-                            ),
-                          ),
+                        CircleAvatar(
+                          radius:
+                              30,
+                          backgroundColor: Colors
+                              .blueGrey[50],
+                          backgroundImage: fotoAdmin.isNotEmpty
+                              ? NetworkImage(fotoAdmin)
+                              : null,
+                          child: fotoAdmin.isEmpty
+                              ? const Icon(Symbols.person,
+                                  color: Color(0xFF34495E), size: 28)
+                              : null,
                         ),
                         const SizedBox(width: 15),
                         Column(
@@ -141,13 +127,16 @@ class _BerandaAdminState extends State<BerandaAdmin> {
                     ),
                     const SizedBox(height: 40),
 
-                    // KARTU MENU (DESAIN ASLI ANDA)
+                    // KARTU MENU (DASHBOARD STATS)
                     _buildMenuCard(
                         "Data pengguna", jmlPengguna.toString(), Symbols.group),
                     _buildMenuCard("Peminjam", jmlPeminjam.toString(),
                         Symbols.person_search),
                     _buildMenuCard("Pengembalian", jmlPengembalian.toString(),
                         Symbols.assignment_return),
+
+                    // Jarak tambahan di bawah agar tidak terlalu mepet
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -155,7 +144,7 @@ class _BerandaAdminState extends State<BerandaAdmin> {
     );
   }
 
-  // Widget kartu menu asli Anda (dengan parameter String count)
+  // Widget Helper untuk membuat kartu menu
   Widget _buildMenuCard(String title, String count, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -163,6 +152,13 @@ class _BerandaAdminState extends State<BerandaAdmin> {
       decoration: BoxDecoration(
         color: const Color(0xFF34495E),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [

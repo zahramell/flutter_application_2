@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/screen/petugas/beranda.dart';
 import 'package:google_fonts/google_fonts.dart';
-//import 'beranda_petugas.dart'; // Buat file ini untuk isi dashboard petugas
+import 'package:material_symbols_icons/symbols.dart';
 
 class MainNavigationPetugas extends StatefulWidget {
   const MainNavigationPetugas({super.key});
@@ -15,58 +15,85 @@ class _MainNavigationPetugasState extends State<MainNavigationPetugas> {
 
   // Daftar halaman untuk setiap menu navbar
   final List<Widget> _pages = [
-    const BerandaPetugas(), // Index 0 (Home)
-    const Center(child: Text("Halaman Operasional")), // Index 1
-    const Center(child: Text("Halaman Laporan")), // Index 2
-    const Center(child: Text("Halaman Pengaturan")), // Index 3
+    const BerandaPetugas(),
+    const Center(child: Text("Halaman Operasional")),
+    const Center(child: Text("Halaman Laporan")),
+    const Center(child: Text("Halaman Pengaturan")),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Menggunakan IndexedStack agar halaman tidak refresh saat pindah tab
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor:
-            const Color(0xFF2F4157), // Warna Biru Tua sesuai desain
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white54,
-        currentIndex: _currentIndex,
-        // Gaya teks menggunakan Poppins
-        selectedLabelStyle:
-            GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        width: double.infinity,
+        height: 99,
+        decoration: const BoxDecoration(
+          color: Color(0xFF2F4157), // Biru Tua Petugas
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(0, -1),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 15,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(Symbols.home_rounded, "Home", 0),
+                    _buildNavItem(Symbols.refresh_rounded, "Operasional", 1),
+                    _buildNavItem(Symbols.description_rounded, "Laporan", 2),
+                    _buildNavItem(Symbols.settings_rounded, "Pengaturan", 3),
+                  ],
+                ),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons
-                .refresh_rounded), // Icon menyerupai "Operasional" di gambar
-            label: 'Operasional',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons
-                .assignment_outlined), // Icon menyerupai "Laporan" di gambar
-            label: 'Laporan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'pengaturan',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  // Helper Widget Navigasi agar UI Konsisten
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    bool isActive = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 26,
+              color: isActive ? Colors.white : Colors.white54,
+              fill: isActive ? 1 : 0,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                color: isActive ? Colors.white : Colors.white54,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
