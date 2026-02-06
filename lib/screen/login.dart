@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
         // Jika Admin
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) =>  MainNavigationAdmin()),
+          MaterialPageRoute(builder: (_) =>  const MainNavigationAdmin()),
         );
       } else if (role == 'petugas') {
         // Jika Petugas
@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
 
-    } on AuthException catch (e) {
+    } on AuthException {
       setState(() {
         isSuccess = false;
         message = "Email atau Sandi salah!";

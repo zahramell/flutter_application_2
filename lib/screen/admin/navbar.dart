@@ -55,7 +55,7 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildNavItem(Symbols.home_rounded, "Home", 0),
-                    _buildNavItem(Symbols.inventory_2_rounded, "Alat", 1),
+                    _buildNavItem(Symbols.rule_settings, "Alat", 1),
                     _buildNavItem(Symbols.history_rounded, "Aktivitas", 2),
                     _buildNavItem(Symbols.settings_rounded, "Pengaturan", 3),
                   ],

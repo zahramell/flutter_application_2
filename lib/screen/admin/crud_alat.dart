@@ -22,30 +22,37 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
   int? _selectedCategoryId;
   String _searchQuery = "";
 
-  // Fungsi Hapus Alat
   Future<void> _deleteAlat(int id) async {
     await supabase.from('alat').delete().match({'id': id});
-    setState(() {}); // Refresh UI setelah hapus
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF2F4157),
-        onPressed: () {
-          // Navigasi ke halaman Tambah Alat
-        },
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
+
+      // TARUH TOMBOL TAMBAH DI SINI
+      floatingActionButton: Padding(
+        // 99 adalah tinggi navbar kamu, kita beri tambahan agar dia melayang di atasnya
+        padding: const EdgeInsets.only(bottom: 100, right: 10),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFF2F4157),
+          shape: const CircleBorder(),
+          onPressed: () {
+            // Navigasi ke halaman Tambah Alat
+          },
+          child: const Icon(Icons.add, color: Colors.white, size: 30),
+        ),
       ),
+
+      // AGAR SEJAJAR DENGAN PENGATURAN (SISI KANAN)
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
-        // top: true memastikan dia menghitung area baterai/jam
         top: true,
         child: Column(
           children: [
-            // JARAK TAMBAHAN agar tidak nempel banget ke indikator baterai
-            const SizedBox(height: 40),
+            const SizedBox(height: 50),
 
             // 1. SEARCH BAR (Ukuran lebar 321)
             Center(
@@ -145,8 +152,8 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                       return Center(
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 20),
-                          width: 329, 
-                          height: 142, 
+                          width: 329,
+                          height: 142,
                           padding: const EdgeInsets.all(15),
                           decoration: BoxDecoration(
                             color: Colors.white,
