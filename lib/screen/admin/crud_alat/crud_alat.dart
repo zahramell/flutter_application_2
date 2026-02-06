@@ -1,20 +1,24 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../services/supabase_service.dart';
-import '../../models/kategori.dart';
-import '../../models/alat.dart';
+
+import '../../../services/supabase_service.dart';
+import '../../../models/kategori.dart';
+import '../../../models/alat.dart';
+import 'tambah_alat.dart';
 
 class CrudAlatPage extends StatefulWidget {
   final String role;
   const CrudAlatPage({super.key, required this.role});
 
   @override
-  State<CrudAlatPage> createState() => _AdminBerandaScreenState();
+  State<CrudAlatPage> createState() => _CrudAlatPageState();
 }
 
-class _AdminBerandaScreenState extends State<CrudAlatPage> {
+class _CrudAlatPageState extends State<CrudAlatPage> {
   final supabase = Supabase.instance.client;
   final supabaseService = SupabaseService();
   final kategoriService = KategoriService();
@@ -22,48 +26,76 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
   int? _selectedCategoryId;
   String _searchQuery = "";
 
-  Future<void> _deleteAlat(int id) async {
-    await supabase.from('alat').delete().match({'id': id});
-    setState(() {});
+  // FUNGSI HAPUS (Match dengan id_alat di DB)
+  Future<void> _deleteAlat(int idAlat) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Hapus Alat",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        content: Text("Apakah Anda yakin ingin menghapus data ini?",
+            style: GoogleFonts.poppins()),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text("Batal",
+                  style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("Hapus",
+                style: GoogleFonts.poppins(
+                    color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await supabase.from('alat').delete().match({'id_alat': idAlat});
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Data berhasil dihapus")));
+        setState(() {});
+      } catch (e) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Gagal menghapus: $e")));
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // TARUH TOMBOL TAMBAH DI SINI
       floatingActionButton: Padding(
-        // 99 adalah tinggi navbar kamu, kita beri tambahan agar dia melayang di atasnya
-        padding: const EdgeInsets.only(bottom: 100, right: 10),
+        padding: const EdgeInsets.only(bottom: 30),
         child: FloatingActionButton(
           backgroundColor: const Color(0xFF2F4157),
           shape: const CircleBorder(),
-          onPressed: () {
-            // Navigasi ke halaman Tambah Alat
+          onPressed: () async {
+            final refresh = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const TambahAlatPage()));
+            if (refresh == true) setState(() {});
           },
           child: const Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
-
-      // AGAR SEJAJAR DENGAN PENGATURAN (SISI KANAN)
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
-        top: true,
         child: Column(
           children: [
-            const SizedBox(height: 50),
-
-            // 1. SEARCH BAR (Ukuran lebar 321)
+            const SizedBox(height: 40),
+            // SEARCH BAR
             Center(
               child: Container(
                 width: 321,
                 height: 40,
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFEFEF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    color: const Color(0xFFEFEFEF),
+                    borderRadius: BorderRadius.circular(12)),
                 child: TextField(
                   textAlignVertical: TextAlignVertical.center,
                   onChanged: (value) =>
@@ -80,10 +112,8 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // 2. FILTER KATEGORI (Horizontal Scroll)
+            // FILTER KATEGORI
             FutureBuilder<List<Map<String, dynamic>>>(
               future: kategoriService.getKategori(),
               builder: (context, snapshot) {
@@ -108,14 +138,11 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                 : const Color(0xFFEFEFEF),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
-                            cat['nama_kategori'],
-                            style: GoogleFonts.poppins(
-                              color: const Color(0xFF2F4157),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: Text(cat['nama_kategori'],
+                              style: GoogleFonts.poppins(
+                                  color: const Color(0xFF2F4157),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12)),
                         ),
                       );
                     }).toList(),
@@ -123,17 +150,14 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                 );
               },
             ),
-
             const SizedBox(height: 25),
-
-            // 3. DAFTAR ALAT (Card Admin 329 x 142)
+            // DAFTAR ALAT
             Expanded(
               child: FutureBuilder<List<Alat>>(
                 future: supabaseService.getAlat(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting)
                     return const Center(child: CircularProgressIndicator());
-                  }
 
                   final filteredList = snapshot.data?.where((alat) {
                         final matchCategory = _selectedCategoryId == null ||
@@ -160,17 +184,15 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              )
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4))
                             ],
                           ),
                           child: Stack(
                             children: [
                               Row(
                                 children: [
-                                  // Gambar Alat
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: Image.network(
@@ -185,7 +207,6 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                     ),
                                   ),
                                   const SizedBox(width: 15),
-                                  // Info Alat
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -195,16 +216,21 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                       children: [
                                         Text(
                                           alat.namaAlat,
-                                          maxLines: 2,
+                                          maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.poppins(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: const Color(0xFF2F4157),
-                                          ),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                              color: const Color(0xFF2F4157)),
+                                        ),
+                                        // STOK TANPA IKON SESUAI REQUEST
+                                        Text(
+                                          "Stok: ${alat.stok}",
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: const Color(0xFF999999)),
                                         ),
                                         const SizedBox(height: 8),
-                                        // Badge Status
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 10, vertical: 4),
@@ -215,32 +241,36 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: Text(
-                                            alat.statusAlat,
-                                            style: GoogleFonts.poppins(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                          child: Text(alat.statusAlat,
+                                              style: GoogleFonts.poppins(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
-                              // Tombol Edit & Hapus di Pojok Kanan Bawah
                               Positioned(
                                 bottom: 0,
                                 right: 0,
                                 child: Row(
                                   children: [
-                                    _actionButton(Symbols.edit_square, () {
-                                      // Logika Edit
+                                    _actionButton(Symbols.edit_square,
+                                        () async {
+                                      final refresh = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) =>
+                                                  TambahAlatPage(
+                                                      alat: alat.toMap())));
+                                      if (refresh == true) setState(() {});
                                     }),
                                     const SizedBox(width: 8),
                                     _actionButton(Symbols.delete, () {
-                                      _deleteAlat(alat.id!);
+                                      if (alat.id != null)
+                                        _deleteAlat(alat.id!);
                                     }),
                                   ],
                                 ),
@@ -260,16 +290,13 @@ class _AdminBerandaScreenState extends State<CrudAlatPage> {
     );
   }
 
-  // Widget Helper untuk tombol aksi bulat navy
   Widget _actionButton(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: const BoxDecoration(
-          color: Color(0xFF2F4157),
-          shape: BoxShape.circle,
-        ),
+            color: Color(0xFF2F4157), shape: BoxShape.circle),
         child: Icon(icon, color: Colors.white, size: 18),
       ),
     );

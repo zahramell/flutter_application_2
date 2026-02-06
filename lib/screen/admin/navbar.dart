@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'beranda.dart';
-import 'crud_alat.dart';
+import 'crud_alat/crud_alat.dart';
 
 class MainNavigationAdmin extends StatefulWidget {
   const MainNavigationAdmin({super.key});
