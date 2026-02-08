@@ -26,47 +26,57 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
   int? _selectedCategoryId;
   String _searchQuery = "";
 
-  // FUNGSI HAPUS (Match dengan id_alat di DB)
+  // ================= HAPUS ALAT =================
   Future<void> _deleteAlat(int idAlat) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Hapus Alat",
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-        content: Text("Apakah Anda yakin ingin menghapus data ini?",
-            style: GoogleFonts.poppins()),
+        title: Text(
+          "Hapus Alat",
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Apakah Anda yakin ingin menghapus data ini?",
+          style: GoogleFonts.poppins(),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text("Batal",
-                  style: GoogleFonts.poppins(color: Colors.grey))),
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              "Batal",
+              style: GoogleFonts.poppins(color: Colors.grey),
+            ),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text("Hapus",
-                style: GoogleFonts.poppins(
-                    color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text(
+              "Hapus",
+              style: GoogleFonts.poppins(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      try {
-        await supabase.from('alat').delete().match({'id_alat': idAlat});
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Data berhasil dihapus")));
-        setState(() {});
-      } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Gagal menghapus: $e")));
-      }
+      await supabase.from('alat').delete().match({'id_alat': idAlat});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Data berhasil dihapus")),
+      );
+      setState(() {});
     }
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+
+      // ===== FLOATING BUTTON TAMBAH =====
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 30),
         child: FloatingActionButton(
@@ -74,28 +84,33 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
           shape: const CircleBorder(),
           onPressed: () async {
             final refresh = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const TambahAlatPage()));
+              context,
+              MaterialPageRoute(
+                builder: (_) => const TambahAlatPage(),
+              ),
+            );
             if (refresh == true) setState(() {});
           },
           child: const Icon(Icons.add, color: Colors.white, size: 30),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // SEARCH BAR
+
+            // ===== SEARCH BAR =====
             Center(
               child: Container(
                 width: 321,
                 height: 40,
                 padding: const EdgeInsets.symmetric(horizontal: 15),
                 decoration: BoxDecoration(
-                    color: const Color(0xFFEFEFEF),
-                    borderRadius: BorderRadius.circular(12)),
+                  color: const Color(0xFFEFEFEF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: TextField(
                   textAlignVertical: TextAlignVertical.center,
                   onChanged: (value) =>
@@ -103,30 +118,42 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                   decoration: InputDecoration(
                     hintText: "Pencarian",
                     hintStyle: GoogleFonts.poppins(
-                        color: const Color(0xFF999999), fontSize: 14),
-                    prefixIcon: const Icon(Symbols.search,
-                        color: Color(0xFF999999), size: 20),
+                      color: const Color(0xFF999999),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Symbols.search,
+                      color: Color(0xFF999999),
+                      size: 20,
+                    ),
                     border: InputBorder.none,
                     isDense: true,
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
-            // FILTER KATEGORI
+
+            // ===== FILTER KATEGORI =====
             FutureBuilder<List<Map<String, dynamic>>>(
               future: kategoriService.getKategori(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) return const SizedBox(height: 45);
+
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Row(
                     children: snapshot.data!.map((cat) {
-                      bool isActive = _selectedCategoryId == cat['id_kategori'];
+                      final isActive =
+                          _selectedCategoryId == cat['id_kategori'];
+
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedCategoryId =
-                            isActive ? null : cat['id_kategori']),
+                        onTap: () => setState(() {
+                          _selectedCategoryId =
+                              isActive ? null : cat['id_kategori'];
+                        }),
                         child: Container(
                           margin: const EdgeInsets.only(right: 12),
                           width: 102,
@@ -138,11 +165,14 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                                 : const Color(0xFFEFEFEF),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(cat['nama_kategori'],
-                              style: GoogleFonts.poppins(
-                                  color: const Color(0xFF2F4157),
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12)),
+                          child: Text(
+                            cat['nama_kategori'],
+                            style: GoogleFonts.poppins(
+                              color: const Color(0xFF2F4157),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -150,29 +180,32 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                 );
               },
             ),
+
             const SizedBox(height: 25),
-            // DAFTAR ALAT
+
+            // ===== DAFTAR ALAT =====
             Expanded(
               child: FutureBuilder<List<Alat>>(
                 future: supabaseService.getAlat(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting)
+                  if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
+                  }
 
-                  final filteredList = snapshot.data?.where((alat) {
-                        final matchCategory = _selectedCategoryId == null ||
-                            alat.idKategori == _selectedCategoryId;
-                        final matchSearch =
-                            alat.namaAlat.toLowerCase().contains(_searchQuery);
-                        return matchCategory && matchSearch;
-                      }).toList() ??
-                      [];
+                  final filteredList = snapshot.data!.where((alat) {
+                    final matchCategory = _selectedCategoryId == null ||
+                        alat.idKategori == _selectedCategoryId;
+                    final matchSearch =
+                        alat.namaAlat.toLowerCase().contains(_searchQuery);
+                    return matchCategory && matchSearch;
+                  }).toList();
 
                   return ListView.builder(
                     itemCount: filteredList.length,
                     padding: const EdgeInsets.only(bottom: 100),
                     itemBuilder: (context, i) {
                       final alat = filteredList[i];
+
                       return Center(
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 20),
@@ -184,9 +217,10 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4))
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
                             ],
                           ),
                           child: Stack(
@@ -200,10 +234,10 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                                       width: 90,
                                       height: 90,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error,
-                                              stackTrace) =>
-                                          const Icon(Icons.image_not_supported,
-                                              size: 50),
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.image_not_supported,
+                                        size: 50,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 15),
@@ -219,21 +253,19 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.poppins(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                              color: const Color(0xFF2F4157)),
-                                        ),
-                                        // STOK TANPA IKON SESUAI REQUEST
-                                        Text(
-                                          "Stok: ${alat.stok}",
-                                          style: GoogleFonts.poppins(
-                                              fontSize: 12,
-                                              color: const Color(0xFF999999)),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: const Color(0xFF2F4157),
+                                          ),
                                         ),
                                         const SizedBox(height: 8),
+
+                                        // ===== STATUS ALAT =====
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 4),
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: alat.statusAlat == 'Tersedia'
                                                 ? const Color(0xFF27AE60)
@@ -241,37 +273,50 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: Text(alat.statusAlat,
-                                              style: GoogleFonts.poppins(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold)),
+                                          child: Text(
+                                            alat.statusAlat,
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
+
+                              // ===== AKSI =====
                               Positioned(
                                 bottom: 0,
                                 right: 0,
                                 child: Row(
                                   children: [
-                                    _actionButton(Symbols.edit_square,
-                                        () async {
-                                      final refresh = await Navigator.push(
+                                    _actionButton(
+                                      Symbols.edit_square,
+                                      () async {
+                                        final refresh = await Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) =>
-                                                  TambahAlatPage(
-                                                      alat: alat.toMap())));
-                                      if (refresh == true) setState(() {});
-                                    }),
+                                            builder: (_) => TambahAlatPage(
+                                              alat: alat.toMap(),
+                                            ),
+                                          ),
+                                        );
+                                        if (refresh == true) setState(() {});
+                                      },
+                                    ),
                                     const SizedBox(width: 8),
-                                    _actionButton(Symbols.delete, () {
-                                      if (alat.id != null)
-                                        _deleteAlat(alat.id!);
-                                    }),
+                                    _actionButton(
+                                      Symbols.delete,
+                                      () {
+                                        if (alat.id != null) {
+                                          _deleteAlat(alat.id!);
+                                        }
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
@@ -290,13 +335,16 @@ class _CrudAlatPageState extends State<CrudAlatPage> {
     );
   }
 
+  // ===== BUTTON AKSI =====
   Widget _actionButton(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: const BoxDecoration(
-            color: Color(0xFF2F4157), shape: BoxShape.circle),
+          color: Color(0xFF2F4157),
+          shape: BoxShape.circle,
+        ),
         child: Icon(icon, color: Colors.white, size: 18),
       ),
     );

@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 class TambahAlatPage extends StatefulWidget {
-  // Jika 'alat' diisi, maka mode EDIT. Jika null, maka mode TAMBAH.
   final Map<String, dynamic>? alat;
   const TambahAlatPage({super.key, this.alat});
 
@@ -21,7 +20,6 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _namaController;
-  late TextEditingController _stokController;
 
   List<Map<String, dynamic>> _categories = [];
   XFile? _imageFile;
@@ -36,25 +34,18 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
     super.initState();
     _fetchCategories();
 
-    // Inisialisasi controller dengan data jika dalam mode Edit
     _namaController =
         TextEditingController(text: widget.alat?['nama_alat'] ?? '');
-    _stokController =
-        TextEditingController(text: widget.alat?['stok']?.toString() ?? '');
     _selectedKategoriId = widget.alat?['id_kategori']?.toString();
     _selectedStatus =
         widget.alat?['status_alat'] ?? (isEdit ? null : 'Tersedia');
   }
 
   Future<void> _fetchCategories() async {
-    try {
-      final data = await _supabase.from('kategori_alat').select();
-      setState(() {
-        _categories = List<Map<String, dynamic>>.from(data);
-      });
-    } catch (e) {
-      debugPrint("Error fetching categories: $e");
-    }
+    final data = await _supabase.from('kategori_alat').select();
+    setState(() {
+      _categories = List<Map<String, dynamic>>.from(data);
+    });
   }
 
   Future<void> _pickImage() async {
@@ -66,8 +57,7 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
   Future<void> _prosesSimpan() async {
     if (!_formKey.currentState!.validate() || _selectedKategoriId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Pastikan semua data dan kategori terisi!")),
+        const SnackBar(content: Text("Pastikan semua data terisi!")),
       );
       return;
     }
@@ -77,7 +67,6 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
     try {
       String? imageUrl = isEdit ? widget.alat!['gambar'] : null;
 
-      // 1. Logika Upload Gambar jika ada file baru yang dipilih
       if (_imageFile != null) {
         final fileName = 'alat_${DateTime.now().millisecondsSinceEpoch}.png';
         if (kIsWeb) {
@@ -95,13 +84,11 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
 
       final dataAlat = {
         'nama_alat': _namaController.text.trim(),
-        'stok': int.parse(_stokController.text),
         'id_kategori': int.parse(_selectedKategoriId!),
         'status_alat': _selectedStatus,
         'gambar': imageUrl ?? '',
       };
 
-      // 2. Operasi Database (Insert atau Update)
       if (isEdit) {
         await _supabase
             .from('alat')
@@ -112,19 +99,20 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
       }
 
       if (mounted) {
-        Navigator.pop(
-            context, true); // Mengirim 'true' agar halaman sebelumnya refresh
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(isEdit
+            content: Text(
+              isEdit
                   ? "Data berhasil diperbarui!"
-                  : "Data berhasil ditambahkan!")),
+                  : "Data berhasil ditambahkan!",
+            ),
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Terjadi kesalahan: $e")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Terjadi kesalahan: $e")));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -164,10 +152,6 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
                     _buildLabel("Nama Alat"),
                     _buildInputField(_namaController, "Masukkan Nama Alat"),
                     const SizedBox(height: 15),
-                    _buildLabel("Stok"),
-                    _buildInputField(_stokController, "Masukkan Jumlah Stok",
-                        isNumber: true),
-                    const SizedBox(height: 15),
                     _buildLabel("Kategori"),
                     _buildDropdownKategori(),
                     const SizedBox(height: 15),
@@ -183,7 +167,7 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
     );
   }
 
-  // --- UI COMPONENTS (SESUAI DESAIN) ---
+  // ================= UI COMPONENTS (TETAP) =================
 
   Widget _buildImagePickerBox() {
     return Center(
@@ -235,11 +219,9 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String hint,
-      {bool isNumber = false}) {
+  Widget _buildInputField(TextEditingController controller, String hint) {
     return TextFormField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       style: GoogleFonts.poppins(fontSize: 13),
       validator: (value) => value!.isEmpty ? "Bidang ini wajib diisi" : null,
       decoration: InputDecoration(
