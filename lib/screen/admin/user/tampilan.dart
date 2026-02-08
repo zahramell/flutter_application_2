@@ -15,8 +15,11 @@ class _UserAdminPageState extends State<UserAdminPage> {
   final supabase = Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> fetchUsers() async {
-    final res =
-        await supabase.from('profiles').select().order('nama', ascending: true);
+    final res = await supabase
+        .from('profiles')
+        .select('id, nama, email, role, foto')
+        .order('nama', ascending: true);
+
     return List<Map<String, dynamic>>.from(res);
   }
 
@@ -56,7 +59,6 @@ class _UserAdminPageState extends State<UserAdminPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
-
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF2F4157),
         onPressed: () async {
@@ -68,7 +70,6 @@ class _UserAdminPageState extends State<UserAdminPage> {
         },
         child: const Icon(Symbols.add, color: Colors.white),
       ),
-
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,7 +143,6 @@ class _UserAdminPageState extends State<UserAdminPage> {
                         ),
                         child: Stack(
                           children: [
-                            // ===== PROFIL =====
                             Row(
                               children: [
                                 CircleAvatar(
@@ -153,10 +153,8 @@ class _UserAdminPageState extends State<UserAdminPage> {
                                           ? NetworkImage(u['foto'])
                                           : null,
                                   child: (u['foto'] == null || u['foto'] == '')
-                                      ? const Icon(
-                                          Symbols.person,
-                                          color: Colors.white,
-                                        )
+                                      ? const Icon(Symbols.person,
+                                          color: Colors.white)
                                       : null,
                                 ),
                                 const SizedBox(width: 14),
@@ -171,7 +169,15 @@ class _UserAdminPageState extends State<UserAdminPage> {
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      u['email'] ?? '-',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       "Sebagai : ${u['role']}",
                                       style: GoogleFonts.poppins(
@@ -183,8 +189,6 @@ class _UserAdminPageState extends State<UserAdminPage> {
                                 ),
                               ],
                             ),
-
-                            // ===== ICON AKSI =====
                             Positioned(
                               right: 0,
                               bottom: 0,
@@ -197,8 +201,7 @@ class _UserAdminPageState extends State<UserAdminPage> {
                                       await Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) =>
-                                              FormUserPage(data: u),
+                                          builder: (_) => FormUserPage(data: u),
                                         ),
                                       );
                                       setState(() {});

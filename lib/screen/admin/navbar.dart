@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'beranda.dart';
 import 'crud_alat/crud_alat.dart';
+import 'logout.dart';
 
 class MainNavigationAdmin extends StatefulWidget {
   const MainNavigationAdmin({super.key});
@@ -19,7 +20,7 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
     const BerandaAdmin(),
     const CrudAlatPage(role: 'admin'), // Role disesuaikan jadi admin
     Center(child: Text("Aktivitas", style: GoogleFonts.poppins())),
-    Center(child: Text("Pengaturan", style: GoogleFonts.poppins())),
+    const PengaturanAdminPage(),
   ];
 
   @override

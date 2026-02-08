@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
         // Jika Admin
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) =>  const MainNavigationAdmin()),
+          MaterialPageRoute(builder: (_) => const MainNavigationAdmin()),
         );
       } else if (role == 'petugas') {
         // Jika Petugas
@@ -75,7 +75,6 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (_) => const MainScreen()),
         );
       }
-
     } on AuthException {
       setState(() {
         isSuccess = false;
@@ -97,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF), 
+      backgroundColor: const Color(0xFFFFFFFF),
       body: Stack(
         children: [
           // Background Biru Muda
@@ -150,7 +149,9 @@ class _LoginPageState extends State<LoginPage> {
                             keyboardType: TextInputType.emailAddress,
                             style: const TextStyle(fontSize: 14),
                             decoration: _inputDecoration("Email"),
-                            validator: (value) => value == null || value.isEmpty ? "Email tidak boleh kosong" : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? "Email tidak boleh kosong"
+                                : null,
                           ),
                           const SizedBox(height: 15),
                           _buildLabel("Masukan Kata Sandi"),
@@ -160,11 +161,19 @@ class _LoginPageState extends State<LoginPage> {
                             style: const TextStyle(fontSize: 14),
                             decoration: _inputDecoration("Kata Sandi").copyWith(
                               suffixIcon: IconButton(
-                                icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility, size: 20, color: const Color(0xFF999999)),
-                                onPressed: () => setState(() => _obscureText = !_obscureText),
+                                icon: Icon(
+                                    _obscureText
+                                        ? Icons.visibility_off
+                                        : Icons.visibility,
+                                    size: 20,
+                                    color: const Color(0xFF999999)),
+                                onPressed: () => setState(
+                                    () => _obscureText = !_obscureText),
                               ),
                             ),
-                            validator: (value) => value == null || value.isEmpty ? "Sandi tidak boleh kosong" : null,
+                            validator: (value) => value == null || value.isEmpty
+                                ? "Sandi tidak boleh kosong"
+                                : null,
                           ),
                           const SizedBox(height: 35),
                           SizedBox(
@@ -175,12 +184,21 @@ class _LoginPageState extends State<LoginPage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFC7D9E5),
                                 foregroundColor: const Color(0xFF2F4157),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
                                 elevation: 0,
                               ),
                               child: loading
-                                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2F4157)))
-                                  : const Text("Masuk", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFF2F4157)))
+                                  : const Text("Masuk",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18)),
                             ),
                           ),
                         ],
@@ -191,7 +209,9 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         message,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: isSuccess ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: isSuccess ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold),
                       ),
                   ],
                 ),
@@ -207,7 +227,8 @@ class _LoginPageState extends State<LoginPage> {
     return Container(
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(text, style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 13)),
+      child: Text(text,
+          style: const TextStyle(color: Color(0xFFFFFFFF), fontSize: 13)),
     );
   }
 
@@ -219,7 +240,8 @@ class _LoginPageState extends State<LoginPage> {
       fillColor: const Color(0xFFFFFFFF),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
     );
   }
 }

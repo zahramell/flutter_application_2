@@ -1,13 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'crud_alat/crud_alat.dart';
 import 'user/tampilan.dart';
 import 'peminjaman_admin/peminjaman.dart';
 import 'pengembalian_admin/pengembalian.dart';
+import 'kategori/tampila.dart';
 
-class BerandaAdmin extends StatelessWidget {
+class BerandaAdmin extends StatefulWidget {
   const BerandaAdmin({super.key});
+
+  @override
+  State<BerandaAdmin> createState() => _BerandaAdminState();
+}
+
+class _BerandaAdminState extends State<BerandaAdmin> {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  String? nama;
+  String? avatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    getProfil();
+  }
+
+  // ================= AMBIL PROFIL ADMIN =================
+  Future<void> getProfil() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final response =
+          await _supabase.from('profiles').select().eq('id', user.id).single();
+
+      setState(() {
+        nama = response['nama'];
+        avatarUrl = response['foto'];
+      });
+    } catch (e) {
+      print('ERROR GET PROFIL: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +52,7 @@ class BerandaAdmin extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            // ================= HEADER (SUDAH ADA) =================
+            // ================= HEADER =================
             Container(
               width: double.infinity,
               height: 160,
@@ -29,18 +66,34 @@ class BerandaAdmin extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(radius: 28),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Colors.white,
+                    backgroundImage:
+                        avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                    child: avatarUrl == null
+                        ? const Icon(Symbols.person, color: Colors.grey)
+                        : null,
+                  ),
                   const SizedBox(width: 15),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Admin",
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text("Administrator",
-                          style: GoogleFonts.poppins(
-                              fontSize: 13, color: Colors.grey)),
+                      Text(
+                        nama ?? 'Admin',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Administrator',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -49,7 +102,7 @@ class BerandaAdmin extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // ================= BARIS 1 : MENU MANAJEMEN =================
+            // ================= BARIS 1 =================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
               child: Row(
@@ -82,7 +135,14 @@ class BerandaAdmin extends StatelessWidget {
                   _menuCard(
                     icon: Symbols.category,
                     label: "Kategori",
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TampilanKategori(),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -90,11 +150,10 @@ class BerandaAdmin extends StatelessWidget {
 
             const SizedBox(height: 25),
 
-            // ================= BARIS 2 : MENU TRANSAKSI (INI YANG BARU) =================
+            // ================= BARIS 2 =================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   _menuCard(
                     icon: Symbols.assignment,
@@ -132,7 +191,7 @@ class BerandaAdmin extends StatelessWidget {
     );
   }
 
-  // ================= KOTAK MENU (TETAP SAMA) =================
+  // ================= MENU CARD =================
   Widget _menuCard({
     required IconData icon,
     required String label,
