@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_2/screen/petugas/beranda.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'logout.dart';
 
 class MainNavigationPetugas extends StatefulWidget {
   const MainNavigationPetugas({super.key});
@@ -18,7 +19,7 @@ class _MainNavigationPetugasState extends State<MainNavigationPetugas> {
     const BerandaPetugas(),
     const Center(child: Text("Halaman Operasional")),
     const Center(child: Text("Halaman Laporan")),
-    const Center(child: Text("Halaman Pengaturan")),
+    PengaturanScreen(),
   ];
 
   @override

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'beranda.dart';
 import 'aktivitas.dart';
 import 'notifikasi.dart';
 import 'profil.dart';
+import 'tab_index_notifier.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -24,6 +26,18 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+
+    tabIndexNotifier.addListener(() {
+      if (!mounted) return;
+      setState(() {
+        _currentIndex = tabIndexNotifier.value;
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
@@ -31,8 +45,8 @@ class _MainScreenState extends State<MainScreen> {
         children: _pages,
       ),
       bottomNavigationBar: Container(
-        width: 440, // Sesuai permintaan
-        height: 99, // Sesuai permintaan
+        width: 440,
+        height: 99,
         decoration: const BoxDecoration(
           color: Color(0xFF2F4157),
           boxShadow: [
@@ -45,10 +59,8 @@ class _MainScreenState extends State<MainScreen> {
         ),
         child: Stack(
           children: [
-            // Konten Ikon dan Teks diletakkan di bagian atas Container
             Positioned(
-              top:
-                  15, // MENGATUR JARAK DARI ATAS (Sesuaikan agar pas dengan Figma)
+              top: 15,
               left: 0,
               right: 0,
               child: Row(
@@ -70,7 +82,10 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isActive = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        // ✅ SATU-SATUNYA CARA GANTI TAB
+        tabIndexNotifier.value = index;
+      },
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 80,
@@ -84,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
                   isActive ? const Color(0xFFC7D9E5) : const Color(0xFF999999),
               fill: isActive ? 1 : 0,
             ),
-            const SizedBox(height: 6), // Jarak antara ikon dan teks
+            const SizedBox(height: 6),
             Text(
               label,
               style: GoogleFonts.poppins(

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Tambahkan ini
 import '../../services/supabase_service.dart';
 import '../../models/kategori.dart';
 import '../../models/alat.dart';
+import 'tab_index_notifier.dart';
 
 class BerandaScreen extends StatefulWidget {
   final String role;
@@ -57,6 +58,32 @@ class _BerandaScreenState extends State<BerandaScreen> {
       debugPrint("Error profiles: $e");
     }
   }
+
+Future<void> _simpanPeminjaman() async {
+  final user = supabase.auth.currentUser;
+  if (user == null) return;
+
+  for (final alat in _keranjangAlat) {
+
+    // 1️⃣ simpan ke tabel peminjaman
+    await supabase.from('peminjaman').insert({
+      'id_peminjam': user.id,
+      'id_alat': alat.id,
+      'tanggal_pinjam': DateTime.now().toIso8601String(),
+      'status_persetujuan': 'menunggu',
+    });
+
+    // 2️⃣ UPDATE STATUS ALAT (INI YANG KURANG)
+    await supabase.from('alat').update({
+  'status_alat': 'Dipinjam',
+}).eq('id_alat', alat.id!);
+
+  }
+}
+
+
+
+
 
   void _toggleKeranjang(Alat alat) {
     if (alat.statusAlat != 'Tersedia') {
@@ -115,14 +142,19 @@ class _BerandaScreenState extends State<BerandaScreen> {
                   width: 180,
                   height: 45,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      setState(() {
-                        _keranjangAlat.clear();
-                        _selectedTanggalPinjam = null;
-                        _selectedTanggalKembali = null;
-                      });
-                    },
+                    onPressed: () async {
+  await _simpanPeminjaman();      // ⬅️ SIMPAN KE DATABASE DULU
+
+  Navigator.pop(context);         // tutup bottom sheet
+  tabIndexNotifier.value = 1;     // pindah ke tab Aktivitas
+
+  setState(() {
+    _keranjangAlat.clear();
+    _selectedTanggalPinjam = null;
+    _selectedTanggalKembali = null;
+  });
+},
+
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF34495E),
                       foregroundColor: Colors.white,
@@ -245,26 +277,40 @@ class _BerandaScreenState extends State<BerandaScreen> {
                     },
                   ),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F4157),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15)),
-                    ),
-                    onPressed: _selectedTanggalPinjam == null
-                        ? null
-                        : () {
-                            Navigator.pop(context);
-                            _showSuccessDialog();
-                          },
-                    child: Text("KONFIRMASI PINJAMAN",
-                        style: GoogleFonts.poppins(
-                            color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ),
+               SizedBox(
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF2F4157),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+    ),
+    onPressed: () async {
+  await _simpanPeminjaman();   // ✅ SIMPAN SEKALI DI SINI SAJA
+
+  Navigator.pop(context);      // tutup bottom sheet
+  tabIndexNotifier.value = 1;  // pindah ke Aktivitas
+
+  setState(() {
+    _keranjangAlat.clear();
+    _selectedTanggalPinjam = null;
+    _selectedTanggalKembali = null;
+  });
+},
+
+
+    child: Text(
+      "KONFIRMASI PINJAMAN",
+      style: GoogleFonts.poppins(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
+
               ],
             ),
           );

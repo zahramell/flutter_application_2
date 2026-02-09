@@ -13,7 +13,6 @@ class BerandaPetugas extends StatefulWidget {
 class _BerandaPetugasState extends State<BerandaPetugas> {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  // Variabel untuk menampung data dari database
   String _namaPetugas = "Memuat...";
   String _fotoUser = "";
   bool _isLoading = true;
@@ -24,12 +23,11 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
     _fetchUserData();
   }
 
-  // FUNGSI MENGAMBIL DATA DARI SUPABASE
+  // ================== PROFIL PETUGAS ==================
   Future<void> _fetchUserData() async {
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
-        // Mengambil data dari tabel 'profiles' berdasarkan ID user yang login
         final data = await supabase
             .from('profiles')
             .select('nama, foto')
@@ -43,22 +41,45 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
         });
       }
     } catch (e) {
-      debugPrint("Error fetching user data: $e");
       setState(() => _isLoading = false);
     }
   }
 
+  // ================== DATA PEMINJAMAN MENUNGGU ==================
+  Future<List<Map<String, dynamic>>> fetchPerluDisetujui() async {
+    final res = await supabase
+        .from('peminjaman')
+        .select('''
+          id_peminjaman,
+          tanggal_pinjam,
+          profiles:id_peminjam(nama),
+          alat:id_alat(nama_alat)
+        ''')
+        .eq('status_persetujuan', 'menunggu')
+        .order('tanggal_pinjam', ascending: false);
+
+    return List<Map<String, dynamic>>.from(res);
+  }
+
+  Future<int> countPerluDisetujui() async {
+    final res = await supabase
+        .from('peminjaman')
+        .select('id_peminjaman')
+        .eq('status_persetujuan', 'menunggu');
+
+    return res.length;
+  }
+
+  // ================== UI ==================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator()) // Loading saat ambil data
+            ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
-                onRefresh:
-                    _fetchUserData, // Tarik layar ke bawah untuk refresh data
+                onRefresh: _fetchUserData,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding:
@@ -66,98 +87,143 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- HEADER PROFIL ---
+                      // ---------- HEADER ----------
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           CircleAvatar(
                             radius: 30,
                             backgroundColor: const Color(0xFFEFEFEF),
-                            // Menggunakan foregroundImage agar foto memenuhi lingkaran
                             foregroundImage: _fotoUser.isNotEmpty
                                 ? NetworkImage(_fotoUser)
                                 : null,
                             child: _fotoUser.isEmpty
                                 ? const Icon(Symbols.person,
-                                    color: Color(0xFF34495E), size: 30)
+                                    color: Color(0xFF34495E))
                                 : null,
                           ),
                           const SizedBox(width: 15),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 _namaPetugas,
                                 style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF2C3E50),
-                                  height: 1.2,
                                 ),
                               ),
                               Text(
                                 "Petugas",
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
-                                  color: const Color(0xFF999999),
-                                  height: 1.2,
+                                  color: Colors.grey,
                                 ),
                               ),
                             ],
-                          ),
+                          )
                         ],
                       ),
 
                       const SizedBox(height: 30),
 
-                      // --- KOTAK MENU STATISTIK ---
+                      // ---------- STATISTIK ----------
                       Row(
                         children: [
                           Expanded(
-                              child: _buildMenuBox("3", "Konfirmasi", null)),
+                            child: FutureBuilder<int>(
+                              future: countPerluDisetujui(),
+                              builder: (context, snapshot) {
+                                return _menuBox(
+                                  snapshot.data?.toString() ?? "0",
+                                  "Perlu Disetujui",
+                                );
+                              },
+                            ),
+                          ),
                           const SizedBox(width: 20),
                           Expanded(
-                              child: _buildMenuBox(
-                                  null, "Kembali", Symbols.account_circle)),
+                            child: _menuBoxIcon(
+                              Symbols.assignment_turned_in,
+                              "Pengembalian",
+                            ),
+                          ),
                         ],
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 35),
 
-                      // --- JUDUL DAFTAR ---
+                      // ---------- JUDUL ----------
                       Text(
                         "Perlu Disetujui",
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
                         ),
                       ),
 
                       const SizedBox(height: 15),
 
-                      // --- KARTU DAFTAR PERSETUJUAN ---
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFCDE0E9),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Column(
-                          children: [
-                            _buildListItem("1.", "Seliya",
-                                "Logitech MK270 Wireless\nCombo _ HSN"),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child:
-                                  Divider(color: Colors.black45, thickness: 1),
+                      // ---------- LIST PEMINJAMAN ----------
+                      FutureBuilder<List<Map<String, dynamic>>>(
+                        future: fetchPerluDisetujui(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+
+                          if (snapshot.data!.isEmpty) {
+                            return Text(
+                              "Tidak ada peminjaman",
+                              style: GoogleFonts.poppins(),
+                            );
+                          }
+
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFCDE0E9),
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            _buildListItem("2.", "Ahmad",
-                                "Logitech MK270 Wireless\nCombo _ HSN"),
-                          ],
-                        ),
+                            child: Column(
+                              children: snapshot.data!.map((data) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.person),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              data['profiles']['nama'],
+                                              style: GoogleFonts.poppins(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Alat: ${data['alat']['nama_alat']}",
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -167,7 +233,8 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
     );
   }
 
-  Widget _buildMenuBox(String? angka, String label, IconData? icon) {
+  // ================== WIDGET BANTUAN ==================
+  Widget _menuBox(String angka, String label) {
     return Container(
       height: 90,
       decoration: BoxDecoration(
@@ -177,43 +244,40 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (angka != null)
-            Text(angka,
-                style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold))
-          else
-            Icon(icon, color: Colors.white, size: 30),
-          Text(label,
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 13)),
+          Text(
+            angka,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.poppins(color: Colors.white),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildListItem(String no, String nama, String barang) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(no,
-            style:
-                GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(nama,
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(barang,
-                  style:
-                      GoogleFonts.poppins(fontSize: 12, color: Colors.black87)),
-            ],
+  Widget _menuBoxIcon(IconData icon, String label) {
+    return Container(
+      height: 90,
+      decoration: BoxDecoration(
+        color: const Color(0xFF34495E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 28),
+          Text(
+            label,
+            style: GoogleFonts.poppins(color: Colors.white),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

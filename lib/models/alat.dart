@@ -4,7 +4,6 @@ class Alat {
   final int idKategori;
   final String statusAlat;
   final String gambar;
-  final int stok; // Tambahan stok
 
   Alat({
     this.id,
@@ -12,7 +11,6 @@ class Alat {
     required this.idKategori,
     required this.statusAlat,
     required this.gambar,
-    required this.stok,
   });
 
   factory Alat.fromJson(Map<String, dynamic> json) {
@@ -22,7 +20,6 @@ class Alat {
       idKategori: json['id_kategori'] ?? 0,
       statusAlat: json['status_alat'] ?? '',
       gambar: json['gambar'] ?? '',
-      stok: json['stok'] ?? 0, // Ambil dari kolom stok
     );
   }
 
@@ -33,7 +30,6 @@ class Alat {
       'id_kategori': idKategori,
       'status_alat': statusAlat,
       'gambar': gambar,
-      'stok': stok,
     };
   }
 }
