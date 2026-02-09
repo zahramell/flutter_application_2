@@ -1,117 +1,126 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../login.dart'; // sesuaikan path login kamu
 
-class ProfilScreen extends StatelessWidget {
-  const ProfilScreen({super.key});
+class PengaturanScreen extends StatelessWidget {
+  const PengaturanScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-    final user = supabase.auth.currentUser;
+  // =============================
+  // PROSES LOGOUT
+  // =============================
+  Future<void> _logout(BuildContext context) async {
+    await Supabase.instance.client.auth.signOut();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Judul
-            const Padding(
-              padding: EdgeInsets.only(left: 25, top: 20, bottom: 30),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Profil",
-                  style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ),
+    if (!context.mounted) return;
 
-            // Foto Profil & Nama (Sesuai gaya mockup Aktivitas)
-            Column(
-              children: [
-                const CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Color(0xFFE5D1B8),
-                  backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=shellya'),
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  user?.email?.split('@')[0].toUpperCase() ?? "SHELIYA",
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2F4157)),
-                ),
-                const Text("Mahasiswa / Peminjam", style: TextStyle(color: Colors.grey)),
-              ],
-            ),
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
+  }
 
-            const SizedBox(height: 40),
-
-            // Menu Pengaturan (Menggunakan Material Symbols Icons Tipis)
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                children: [
-                  _buildMenuItem(Symbols.person, "Informasi Akun"),
-                  _buildMenuItem(Symbols.history, "Riwayat Peminjaman"),
-                  _buildMenuItem(Symbols.lock, "Ubah Kata Sandi"),
-                  _buildMenuItem(Symbols.help_outline, "Pusat Bantuan"),
-                  const SizedBox(height: 20),
-                  
-                  // Tombol Logout Terhubung Supabase
-                  GestureDetector(
-                    onTap: () async {
-                      await supabase.auth.signOut();
-                      // Tambahkan navigasi balik ke halaman Login di sini
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE5E5), // Merah muda halus
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Symbols.logout, color: Colors.red, weight: 300),
-                          SizedBox(width: 15),
-                          Text(
-                            "Keluar",
-                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+  // =============================
+  // DIALOG KONFIRMASI
+  // =============================
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
         ),
+        title: Text(
+          "Konfirmasi Logout",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "Apakah kamu yakin ingin keluar dari aplikasi?",
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Batal",
+              style: GoogleFonts.poppins(),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logout(context);
+            },
+            child: Text(
+              "Logout",
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF2F4157), weight: 300),
-          const SizedBox(width: 15),
-          Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w500, color: Color(0xFF2F4157)),
+  // =============================
+  // UI
+  // =============================
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          "Pengaturan",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
           ),
-          const Spacer(),
-          const Icon(Symbols.chevron_right, color: Colors.grey, weight: 300),
-        ],
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.logout,
+                  color: Colors.red,
+                ),
+                title: Text(
+                  "Logout",
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+                subtitle: Text(
+                  "Keluar dari akun yang sedang digunakan",
+                  style: GoogleFonts.poppins(fontSize: 12),
+                ),
+                onTap: () => _showLogoutDialog(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

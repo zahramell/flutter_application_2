@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'crud_alat/crud_alat.dart';
+import 'alat/crud_alat.dart';
 import 'user/tampilan.dart';
-import 'peminjaman_admin/peminjaman.dart';
+import 'peminjaman_admin/peminjaman_list.dart';
 import 'pengembalian_admin/pengembalian.dart';
 import 'kategori/tampila.dart';
 

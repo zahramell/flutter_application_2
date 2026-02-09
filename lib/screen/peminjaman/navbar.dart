@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'beranda.dart';
 import 'aktivitas.dart';
 import 'notifikasi.dart';
@@ -22,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const BerandaScreen(role: 'peminjam'),
     const AktivitasScreen(),
     const NotifikasiScreen(),
-    const ProfilScreen(),
+    const PengaturanScreen(),
   ];
 
   @override

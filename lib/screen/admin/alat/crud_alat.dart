@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../services/supabase_service.dart';
-import '../../../models/kategori.dart';
+import '../../../services/kategori.dart';
 import '../../../models/alat.dart';
 import 'tambah_alat.dart';
 

@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import '../services/supabase_service.dart';
+import '../../../services/supabase_service.dart';
 
 class InputAlatPage extends StatefulWidget {
   const InputAlatPage({super.key});

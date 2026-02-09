@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Tambahkan ini
 import '../../services/supabase_service.dart';
-import '../../models/kategori.dart';
+import '../../services/kategori.dart';
 import '../../models/alat.dart';
 import 'tab_index_notifier.dart';
 
@@ -59,31 +59,39 @@ class _BerandaScreenState extends State<BerandaScreen> {
     }
   }
 
-Future<void> _simpanPeminjaman() async {
-  final user = supabase.auth.currentUser;
-  if (user == null) return;
+  Future<void> _simpanPeminjaman() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return;
 
-  for (final alat in _keranjangAlat) {
+    for (final alat in _keranjangAlat) {
+      // 1️⃣ simpan ke tabel peminjaman
+      await supabase.from('peminjaman').insert({
+        'id_peminjam': user.id,
+        'id_alat': alat.id,
+        'tanggal_pinjam': DateTime.now().toIso8601String(),
+        'status_persetujuan': 'menunggu',
+      });
 
-    // 1️⃣ simpan ke tabel peminjaman
-    await supabase.from('peminjaman').insert({
-      'id_peminjam': user.id,
-      'id_alat': alat.id,
-      'tanggal_pinjam': DateTime.now().toIso8601String(),
-      'status_persetujuan': 'menunggu',
-    });
-
-    // 2️⃣ UPDATE STATUS ALAT (INI YANG KURANG)
-    await supabase.from('alat').update({
-  'status_alat': 'Dipinjam',
-}).eq('id_alat', alat.id!);
-
+      // 2️⃣ UPDATE STATUS ALAT (INI YANG KURANG)
+      await supabase.from('alat').update({
+        'status_alat': 'Dipinjam',
+      }).eq('id_alat', alat.id!);
+    }
   }
-}
 
+  Future<void> tolak(int idPeminjaman, int idAlat) async {
+    // 1️⃣ ubah status peminjaman
+    await supabase.from('peminjaman').update({
+      'status_persetujuan': 'ditolak',
+    }).eq('id_peminjaman', idPeminjaman);
 
+    // 2️⃣ KEMBALIKAN STATUS ALAT
+    await supabase.from('alat').update({
+      'status_alat': 'Tersedia',
+    }).eq('id_alat', idAlat);
 
-
+    setState(() {});
+  }
 
   void _toggleKeranjang(Alat alat) {
     if (alat.statusAlat != 'Tersedia') {
@@ -143,18 +151,17 @@ Future<void> _simpanPeminjaman() async {
                   height: 45,
                   child: ElevatedButton(
                     onPressed: () async {
-  await _simpanPeminjaman();      // ⬅️ SIMPAN KE DATABASE DULU
+                      await _simpanPeminjaman(); // ⬅️ SIMPAN KE DATABASE DULU
 
-  Navigator.pop(context);         // tutup bottom sheet
-  tabIndexNotifier.value = 1;     // pindah ke tab Aktivitas
+                      Navigator.pop(context); // tutup bottom sheet
+                      tabIndexNotifier.value = 1; // pindah ke tab Aktivitas
 
-  setState(() {
-    _keranjangAlat.clear();
-    _selectedTanggalPinjam = null;
-    _selectedTanggalKembali = null;
-  });
-},
-
+                      setState(() {
+                        _keranjangAlat.clear();
+                        _selectedTanggalPinjam = null;
+                        _selectedTanggalKembali = null;
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF34495E),
                       foregroundColor: Colors.white,
@@ -277,40 +284,37 @@ Future<void> _simpanPeminjaman() async {
                     },
                   ),
                 ),
-               SizedBox(
-  width: double.infinity,
-  height: 50,
-  child: ElevatedButton(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF2F4157),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-    ),
-    onPressed: () async {
-  await _simpanPeminjaman();   // ✅ SIMPAN SEKALI DI SINI SAJA
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F4157),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await _simpanPeminjaman(); // ✅ SIMPAN SEKALI DI SINI SAJA
 
-  Navigator.pop(context);      // tutup bottom sheet
-  tabIndexNotifier.value = 1;  // pindah ke Aktivitas
+                      Navigator.pop(context); // tutup bottom sheet
+                      tabIndexNotifier.value = 1; // pindah ke Aktivitas
 
-  setState(() {
-    _keranjangAlat.clear();
-    _selectedTanggalPinjam = null;
-    _selectedTanggalKembali = null;
-  });
-},
-
-
-    child: Text(
-      "KONFIRMASI PINJAMAN",
-      style: GoogleFonts.poppins(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
-
+                      setState(() {
+                        _keranjangAlat.clear();
+                        _selectedTanggalPinjam = null;
+                        _selectedTanggalKembali = null;
+                      });
+                    },
+                    child: Text(
+                      "KONFIRMASI PINJAMAN",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           );

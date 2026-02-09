@@ -21,7 +21,13 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
 
     final res = await supabase
         .from('peminjaman')
-        .select('*, alat:id_alat(nama_alat, gambar)')
+        .select('''
+          id_peminjaman,
+          tanggal_pinjam,
+          tanggal_jatuh_tempo,
+          status_persetujuan,
+          alat:id_alat(nama_alat, gambar)
+        ''')
         .eq('id_peminjam', user.id)
         .order('tanggal_pinjam', ascending: false);
 
@@ -35,15 +41,24 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
     await supabase.from('pengembalian').insert({
       'id_peminjaman': idPeminjaman,
       'tanggal_kembali': DateTime.now().toIso8601String(),
-      'status_pengembalian': 'menunggu',
+      'kondisi_alat': 'baik',
     });
 
     await supabase
         .from('peminjaman')
-        .update({'status_persetujuan': 'menunggu_pengembalian'})
-        .eq('id_peminjaman', idPeminjaman);
+        .update({'status_persetujuan': 'menunggu_pengembalian'}).eq(
+            'id_peminjaman', idPeminjaman);
 
     setState(() {});
+  }
+
+  // =============================
+  // FORMAT TANGGAL
+  // =============================
+  String formatTanggal(String? date) {
+    if (date == null) return '-';
+    final d = DateTime.parse(date);
+    return "${d.day}/${d.month}/${d.year}";
   }
 
   // =============================
@@ -95,6 +110,9 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                       final data = snapshot.data![index];
                       final alat = data['alat'];
 
+                      final String statusDb =
+                          data['status_persetujuan'] ?? 'menunggu';
+
                       return Center(
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 20),
@@ -117,13 +135,16 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                               // ===== INFO ALAT =====
                               Row(
                                 children: [
-                                  Image.network(
-                                    alat['gambar'] ?? '',
-                                    width: 100,
-                                    height: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        const Icon(Icons.image),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      alat?['gambar'] ?? '',
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.image),
+                                    ),
                                   ),
                                   const SizedBox(width: 15),
                                   Expanded(
@@ -132,39 +153,49 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          alat['nama_alat'],
+                                          alat?['nama_alat'] ??
+                                              'Alat tidak diketahui',
                                           style: GoogleFonts.poppins(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
-                                            color:
-                                                const Color(0xFF2F4157),
+                                            color: const Color(0xFF2F4157),
                                           ),
                                         ),
                                         const SizedBox(height: 8),
-                                        _status(
-                                          data['status_persetujuan'],
-                                        ),
+                                        _statusBadge(statusDb),
                                       ],
                                     ),
                                   ),
                                 ],
                               ),
 
+                              const SizedBox(height: 10),
+
+                              // ===== TANGGAL =====
+                              Text(
+                                "Pinjam : ${formatTanggal(data['tanggal_pinjam'])}",
+                                style: GoogleFonts.poppins(fontSize: 12),
+                              ),
+                              Text(
+                                "Jatuh Tempo : ${formatTanggal(data['tanggal_jatuh_tempo'])}",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+
                               // ===== TOMBOL PENGEMBALIAN =====
-                              if (data['status_persetujuan'] == 'disetujui')
+                              if (statusDb == 'disetujui')
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.only(top: 10),
+                                  padding: const EdgeInsets.only(top: 10),
                                   child: SizedBox(
                                     width: double.infinity,
                                     height: 36,
                                     child: ElevatedButton(
-                                      style:
-                                          ElevatedButton.styleFrom(
+                                      style: ElevatedButton.styleFrom(
                                         backgroundColor:
                                             const Color(0xFF2F4157),
-                                        shape:
-                                            RoundedRectangleBorder(
+                                        shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -178,8 +209,7 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                                         "Ajukan Pengembalian",
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
-                                          fontWeight:
-                                              FontWeight.w600,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
@@ -201,14 +231,23 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
   }
 
   // =============================
-  // BADGE STATUS
+  // BADGE STATUS (USER FRIENDLY)
   // =============================
-  Widget _status(String status) {
-    Color color = status == 'disetujui'
-        ? Colors.green
-        : status == 'ditolak'
-            ? Colors.red
-            : Colors.orange;
+  Widget _statusBadge(String status) {
+    String label;
+    Color color;
+
+    if (status == 'disetujui') {
+      label = 'Disetujui';
+      color = Colors.green;
+    } else if (status == 'ditolak') {
+      label = 'Ditolak';
+      color = Colors.red;
+    } else {
+      // menunggu / menunggu_pengembalian / null
+      label = 'Diverifikasi';
+      color = Colors.orange;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -217,7 +256,7 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status,
+        label,
         style: GoogleFonts.poppins(
           color: Colors.white,
           fontSize: 11,
