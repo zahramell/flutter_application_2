@@ -17,6 +17,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
   String _fotoUser = "";
   bool _loading = true;
 
+  // ================= FORMAT TANGGAL =================
   String formatTanggal(dynamic value) {
     if (value == null) return '-';
     final d = DateTime.parse(value.toString());
@@ -53,8 +54,8 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
       id_peminjaman,
       tanggal_pinjam,
       tanggal_jatuh_tempo,
-      profiles:id_peminjam(nama),
-      alat:id_alat(id_alat,nama_alat)
+      profiles:id_peminjam(nama, foto),
+      alat:id_alat(id_alat, nama_alat)
     ''').eq('status_persetujuan', 'menunggu');
 
     return List<Map<String, dynamic>>.from(res);
@@ -100,62 +101,53 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ===== HEADER =====
+                    // ===== HEADER DASHBOARD =====
+
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      width: double.infinity,
+                      height: 160,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: const BoxDecoration(
                         color: Color(0xFFD7E7F0),
-                        borderRadius:
-                            BorderRadius.vertical(bottom: Radius.circular(30)),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(40),
+                          bottomRight: Radius.circular(10),
+                        ),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 30,
+                            backgroundColor: Colors.white,
                             backgroundImage: _fotoUser.isNotEmpty
                                 ? NetworkImage(_fotoUser)
                                 : null,
                             child: _fotoUser.isEmpty
-                                ? const Icon(Symbols.person)
+                                ? const Icon(Symbols.person, size: 30)
                                 : null,
                           ),
                           const SizedBox(width: 15),
                           Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(_namaPetugas,
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                              Text("Petugas",
-                                  style: GoogleFonts.poppins(fontSize: 12)),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ===== TOTAL =====
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2F4157),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text("Total Mouse",
-                              style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                          Text("20",
-                              style: GoogleFonts.poppins(
-                                  color: Colors.white,
+                              Text(
+                                _namaPetugas,
+                                style: GoogleFonts.poppins(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2F4157),
+                                ),
+                              ),
+                              Text(
+                                "petugas",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -176,7 +168,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                         ),
                         const SizedBox(width: 15),
                         Expanded(
-                          child: _menuBox("–", "Sedang\nDipinjam"),
+                          child: _menuBox("-", "Sedang\nDipinjam"),
                         ),
                       ],
                     ),
@@ -189,7 +181,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
 
                     const SizedBox(height: 15),
 
-                    // ===== LIST =====
+                    // ===== LIST CARD =====
                     FutureBuilder<List<Map<String, dynamic>>>(
                       future: fetchPerluDisetujui(),
                       builder: (c, s) {
@@ -205,95 +197,106 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
 
                         return Column(
                           children: s.data!.map((d) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 15),
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6)
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 22,
-                                        backgroundColor:
-                                            const Color(0xFFEFEFEF),
-                                        backgroundImage:
-                                            d['profiles']['foto'] != null &&
-                                                    d['profiles']['foto']
-                                                        .toString()
-                                                        .isNotEmpty
-                                                ? NetworkImage(
-                                                    d['profiles']['foto'])
-                                                : null,
-                                        child: d['profiles']['foto'] == null
-                                            ? const Icon(Icons.person,
-                                                color: Colors.grey)
-                                            : null,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            d['profiles']['nama'] ?? '-',
-                                            style: GoogleFonts.poppins(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          Text(
-                                            "Peminjam",
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 11,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    "Alat: ${d['alat']?['nama_alat'] ?? '-'}\n"
-                                    "Tgl Pinjam: ${formatTanggal(d['tanggal_pinjam'])}\n"
-                                    "Jatuh Tempo: ${formatTanggal(d['tanggal_jatuh_tempo'])}",
-                                    style: GoogleFonts.poppins(fontSize: 12),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green),
-                                          onPressed: () => setujui(
-                                              d['id_peminjaman'],
-                                              d['alat']['id_alat']),
-                                          child: const Text("Setujui"),
+                            return Center(
+                              child: Container(
+                                width: 329, // ✅ lebar card
+                                margin: const EdgeInsets.only(bottom: 15),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 22,
+                                          backgroundColor:
+                                              const Color(0xFFEFEFEF),
+                                          backgroundImage:
+                                              d['profiles']['foto'] != null &&
+                                                      d['profiles']['foto']
+                                                          .toString()
+                                                          .isNotEmpty
+                                                  ? NetworkImage(
+                                                      d['profiles']['foto'])
+                                                  : null,
+                                          child: d['profiles']['foto'] == null
+                                              ? const Icon(Icons.person,
+                                                  color: Colors.grey)
+                                              : null,
                                         ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red),
-                                          onPressed: () =>
-                                              tolak(d['id_peminjaman']),
-                                          child: const Text("Tolak"),
+                                        const SizedBox(width: 12),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              d['profiles']['nama'] ?? '-',
+                                              style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            Text("Peminjam",
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 11,
+                                                    color: Colors.grey)),
+                                          ],
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                ],
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      "Alat: ${d['alat']['nama_alat']}\n"
+                                      "Tgl Pinjam: ${formatTanggal(d['tanggal_pinjam'])}\n"
+                                      "Jatuh Tempo: ${formatTanggal(d['tanggal_jatuh_tempo'])}",
+                                      style: GoogleFonts.poppins(fontSize: 12),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.green,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            onPressed: () => setujui(
+                                                d['id_peminjaman'],
+                                                d['alat']['id_alat']),
+                                            child: const Text("Setujui"),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            onPressed: () =>
+                                                tolak(d['id_peminjaman']),
+                                            child: const Text("Tolak"),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
                           }).toList(),
@@ -307,6 +310,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
     );
   }
 
+  // ================= MENU BOX =================
   Widget _menuBox(String angka, String label) {
     return Container(
       height: 90,

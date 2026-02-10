@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'beranda.dart';
-import 'alat/alat_list_page.dart';
+import 'alat_list_page.dart';
 import 'aktivitas.dart';
 import 'logout.dart';
 
@@ -20,7 +20,7 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
   final List<Widget> _pages = [
     const BerandaAdmin(),
     const CrudAlatPage(role: 'admin'),
-    const LogAktivitasAdminPage(),
+    const AktivitasPage(),
     const PengaturanAdminPage(),
   ];
 

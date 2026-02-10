@@ -5,9 +5,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../services/supabase_service.dart';
-import '../../../services/kategori.dart';
-import '../../../models/alat.dart';
+import '../../services/supabase_service.dart';
+import '../../services/kategori.dart';
+import '../../models/alat.dart';
 import 'form_alat_page.dart';
 
 class CrudAlatPage extends StatefulWidget {

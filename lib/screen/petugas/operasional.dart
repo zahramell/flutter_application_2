@@ -257,39 +257,52 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
     required List<Widget> children,
     String? foto,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey[300],
-                backgroundImage:
-                    foto != null && foto.isNotEmpty ? NetworkImage(foto) : null,
-                child: foto == null || foto.isEmpty
-                    ? const Icon(Icons.person, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  nama,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+    return Center(
+      child: Container(
+        width: 329, // ✅ lebar card
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white, // ✅ card putih
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08), // ✅ bayangan halus
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: foto != null && foto.isNotEmpty
+                      ? NetworkImage(foto)
+                      : null,
+                  child: foto == null || foto.isEmpty
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : null,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    nama,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...children,
+          ],
+        ),
       ),
     );
   }
