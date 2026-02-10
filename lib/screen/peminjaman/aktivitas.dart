@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/pengembalian_service.dart';
+import 'pengembalian.dart';
 
 class AktivitasScreen extends StatefulWidget {
   const AktivitasScreen({super.key});
@@ -11,6 +13,98 @@ class AktivitasScreen extends StatefulWidget {
 
 class _AktivitasScreenState extends State<AktivitasScreen> {
   final supabase = Supabase.instance.client;
+  final pengembalianService = PengembalianService();
+  String _kondisiAlat = 'baik';
+
+  void showSuccessPengembalian(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 70),
+                const SizedBox(height: 16),
+                Text(
+                  "Pengembalian Alat\nBerhasil",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Alat telah dikembalikan.\nTerima kasih!",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // tutup dialog
+                    setState(() {}); // refresh list
+                  },
+                  child: const Text("Lihat Status"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void bukaFormPengembalian(int idPeminjaman) {
+    final parentContext = context; // ⬅️ simpan context utama
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FieldPengembalian(
+                kondisiAlat: _kondisiAlat,
+                onChanged: (val) {
+                  setState(() {
+                    _kondisiAlat = val;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await pengembalianService.ajukanPengembalian(
+                    idPeminjaman: idPeminjaman,
+                    kondisiAlat: _kondisiAlat,
+                  );
+
+                  Navigator.pop(context); // ⬅️ tutup bottom sheet
+
+                  // ⬇️ PAKAI CONTEXT UTAMA
+                  Future.delayed(const Duration(milliseconds: 200), () {
+                    showSuccessPengembalian(parentContext);
+                  });
+                },
+                child: const Text("KIRIM PENGEMBALIAN"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   // =============================
   // AMBIL DATA PEMINJAMAN USER
@@ -34,22 +128,16 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
     return List<Map<String, dynamic>>.from(res);
   }
 
-  // =============================
-  // AJUKAN PENGEMBALIAN
-  // =============================
-  Future<void> ajukanPengembalian(int idPeminjaman) async {
-    await supabase.from('pengembalian').insert({
-      'id_peminjaman': idPeminjaman,
-      'tanggal_kembali': DateTime.now().toIso8601String(),
-      'kondisi_alat': 'baik',
-    });
+  Future<void> tolakPeminjaman(int idPeminjaman, int idAlat) async {
+    // 1. Update status peminjaman
+    await supabase.from('peminjaman').update({
+      'status_persetujuan': 'ditolak',
+    }).eq('id_peminjaman', idPeminjaman);
 
-    await supabase
-        .from('peminjaman')
-        .update({'status_persetujuan': 'menunggu_pengembalian'}).eq(
-            'id_peminjaman', idPeminjaman);
-
-    setState(() {});
+    // 2. KEMBALIKAN STATUS ALAT
+    await supabase.from('alat').update({
+      'status_alat': 'tersedia',
+    }).eq('id_alat', idAlat);
   }
 
   // =============================
@@ -200,8 +288,8 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                                               BorderRadius.circular(10),
                                         ),
                                       ),
-                                      onPressed: () async {
-                                        await ajukanPengembalian(
+                                      onPressed: () {
+                                        bukaFormPengembalian(
                                           data['id_peminjaman'],
                                         );
                                       },

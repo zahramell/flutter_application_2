@@ -52,6 +52,7 @@ class _PeminjamanAdminPageState extends State<PeminjamanAdminPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         title: const Text("Data Peminjaman (Admin)"),
         centerTitle: true,
@@ -71,111 +72,137 @@ class _PeminjamanAdminPageState extends State<PeminjamanAdminPage> {
 
           return ListView.builder(
             itemCount: data.length,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             itemBuilder: (context, index) {
               final p = data[index];
               final profil = p['profiles'];
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F3F8),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ===== HEADER PROFIL + ICON =====
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundImage:
-                              profil['foto'] != null && profil['foto'] != ''
-                                  ? NetworkImage(profil['foto'])
-                                  : null,
-                          backgroundColor: Colors.grey.shade300,
-                          child: profil['foto'] == null
-                              ? const Icon(Icons.person, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                profil['nama'],
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                profil['role'],
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // ===== ICON EDIT & HAPUS =====
-                        Row(
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        DetailPeminjamanAdminPage(data: p),
-                                  ),
-                                ).then((value) {
-                                  if (value == true) setState(() {});
-                                });
-                              },
-                              child: _iconAction(
-                                icon: Symbols.edit,
-                                color: const Color(0xFF2F4157),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () async {
-                                await supabase
-                                    .from('peminjaman')
-                                    .delete()
-                                    .eq('id_peminjaman', p['id_peminjaman']);
-                                setState(() {});
-                              },
-                              child: _iconAction(
-                                icon: Symbols.delete,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
+              return Center(
+                child: SizedBox(
+                  width: 329, // ✅ LEBAR CARD 329
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // ✅ BACKGROUND PUTIH
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08), // ✅ SHADOW
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ===== HEADER PROFIL + ICON =====
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundImage: profil['foto'] != null &&
+                                      profil['foto'].toString().isNotEmpty
+                                  ? NetworkImage(profil['foto'])
+                                  : null,
+                              backgroundColor: Colors.grey.shade300,
+                              child: profil['foto'] == null
+                                  ? const Icon(Icons.person,
+                                      color: Colors.white)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profil['nama'],
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    profil['role'],
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                    const SizedBox(height: 12),
+                            // ===== ICON =====
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            DetailPeminjamanAdminPage(data: p),
+                                      ),
+                                    ).then((value) {
+                                      if (value == true) setState(() {});
+                                    });
+                                  },
+                                  child: _iconAction(
+                                    icon: Symbols.visibility,
+                                    color: const Color(0xFF2F4157),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  onTap: () async {
+                                    await supabase
+                                        .from('peminjaman')
+                                        .delete()
+                                        .eq('id_peminjaman',
+                                            p['id_peminjaman']);
+                                    setState(() {});
+                                  },
+                                  child: _iconAction(
+                                    icon: Symbols.delete,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
 
-                    // ===== DATA PEMINJAMAN =====
-                    Text(
-                      p['alat']['nama_alat'],
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                        const SizedBox(height: 14),
+
+                        // ===== DATA PEMINJAMAN =====
+                        Text(
+                          p['alat']['nama_alat'],
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Pinjam : ${p['tanggal_pinjam']}",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
+                        Text(
+                          "Jatuh Tempo : ${p['tanggal_jatuh_tempo'] ?? '-'}",
+                          style: GoogleFonts.poppins(fontSize: 12),
+                        ),
+                        Text(
+                          "Status : ${p['status_persetujuan']}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text("Pinjam : ${p['tanggal_pinjam']}"),
-                    Text("Jatuh Tempo : ${p['tanggal_jatuh_tempo'] ?? '-'}"),
-                    Text("Status : ${p['status_persetujuan']}"),
-                  ],
+                  ),
                 ),
               );
             },

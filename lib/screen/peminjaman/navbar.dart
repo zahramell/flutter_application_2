@@ -3,9 +3,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'beranda.dart';
 import 'aktivitas.dart';
-import 'notifikasi.dart';
 import 'profil.dart';
 import 'tab_index_notifier.dart';
+import 'notifikasi.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,7 +20,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const BerandaScreen(role: 'peminjam'),
     const AktivitasScreen(),
-    const NotifikasiScreen(),
+    const LogAktivitasPage(),
     const PengaturanScreen(),
   ];
 

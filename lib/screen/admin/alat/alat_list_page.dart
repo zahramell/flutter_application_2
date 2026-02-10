@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../services/supabase_service.dart';
 import '../../../services/kategori.dart';
 import '../../../models/alat.dart';
-import 'tambah_alat.dart';
+import 'form_alat_page.dart';
 
 class CrudAlatPage extends StatefulWidget {
   final String role;

@@ -37,20 +37,26 @@ class _TampilanKategoriState extends State<TampilanKategori> {
       });
     } catch (e) {
       print('Error get kategori: $e');
+      setState(() => isLoading = false);
     }
   }
 
   // ================= CREATE =================
   Future<void> tambahKategori() async {
+    if (_namaController.text.isEmpty) return;
+
     await _supabase.from('kategori_alat').insert({
       'nama_kategori': _namaController.text,
     });
+
     _namaController.clear();
     getKategori();
   }
 
   // ================= UPDATE =================
   Future<void> editKategori(int id) async {
+    if (_namaController.text.isEmpty) return;
+
     await _supabase
         .from('kategori_alat')
         .update({'nama_kategori': _namaController.text}).eq('id_kategori', id);
@@ -101,7 +107,7 @@ class _TampilanKategoriState extends State<TampilanKategori> {
   }
 
   // ================= DIALOG EDIT =================
-  void dialogEdit(Map data) {
+  void dialogEdit(Map<String, dynamic> data) {
     _namaController.text = data['nama_kategori'];
     showDialog(
       context: context,
@@ -170,6 +176,7 @@ class _TampilanKategoriState extends State<TampilanKategori> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         title: Text(
           'Data Kategori',
@@ -190,38 +197,45 @@ class _TampilanKategoriState extends State<TampilanKategori> {
                   ),
                 )
               : ListView.builder(
+                  padding: const EdgeInsets.only(top: 10),
                   itemCount: kategoriList.length,
                   itemBuilder: (context, index) {
                     final data = kategoriList[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: ListTile(
-                        leading: const Icon(Symbols.category),
-                        title: Text(
-                          data['nama_kategori'],
-                          style: GoogleFonts.poppins(),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(
-                                Symbols.edit,
-                                color: Colors.orange,
-                              ),
-                              onPressed: () => dialogEdit(data),
+                    return Center(
+                      child: SizedBox(
+                        width: 329, // ✅ WIDTH CARD 329
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListTile(
+                            leading: const Icon(Symbols.category),
+                            title: Text(
+                              data['nama_kategori'],
+                              style: GoogleFonts.poppins(),
                             ),
-                            IconButton(
-                              icon: const Icon(
-                                Symbols.delete,
-                                color: Colors.red,
-                              ),
-                              onPressed: () => dialogHapus(data['id_kategori']),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Symbols.edit,
+                                    color: Colors.orange,
+                                  ),
+                                  onPressed: () => dialogEdit(data),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Symbols.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () =>
+                                      dialogHapus(data['id_kategori']),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     );

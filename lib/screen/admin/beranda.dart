@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'alat/crud_alat.dart';
+import 'alat/alat_list_page.dart';
 import 'user/tampilan.dart';
 import 'peminjaman_admin/peminjaman_list.dart';
 import 'pengembalian_admin/pengembalian.dart';

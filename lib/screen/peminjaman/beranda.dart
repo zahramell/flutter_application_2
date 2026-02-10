@@ -6,6 +6,7 @@ import '../../services/supabase_service.dart';
 import '../../services/kategori.dart';
 import '../../models/alat.dart';
 import 'tab_index_notifier.dart';
+import '../../services/log_aktifitas_serices.dart';
 
 class BerandaScreen extends StatefulWidget {
   final String role;
@@ -19,6 +20,7 @@ class _BerandaScreenState extends State<BerandaScreen> {
   final supabase = Supabase.instance.client; // Inisialisasi Supabase
   final supabaseService = SupabaseService();
   final kategoriService = KategoriService();
+  final logService = LogAktivitasService();
 
   // Variabel untuk data profil
   String _namaUser = "Loading...";
@@ -94,12 +96,15 @@ class _BerandaScreenState extends State<BerandaScreen> {
   }
 
   void _toggleKeranjang(Alat alat) {
-    if (alat.statusAlat != 'Tersedia') {
+    final status = alat.statusAlat.toLowerCase().trim();
+
+    if (status != 'tersedia') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Alat tidak tersedia", style: GoogleFonts.poppins()),
         ),
       );
+
       return;
     }
 
@@ -111,6 +116,9 @@ class _BerandaScreenState extends State<BerandaScreen> {
         _keranjangAlat.add(alat);
       }
     });
+    logService.tambahLog(
+      "Mengajukan peminjaman alat: ${alat.namaAlat}",
+    );
   }
 
   void _showSuccessDialog() {
@@ -493,89 +501,106 @@ class _BerandaScreenState extends State<BerandaScreen> {
                       [];
 
                   return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredList.length,
-                    padding: const EdgeInsets.only(bottom: 100),
-                    itemBuilder: (context, i) {
-                      final alat = filteredList[i];
-                      bool isSelected =
-                          _keranjangAlat.any((item) => item.id == alat.id);
-                      return Center(
-                        child: GestureDetector(
-                          onTap: () => _toggleKeranjang(alat),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            width: 329,
-                            height: 142,
-                            padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: isSelected
-                                  ? Border.all(
-                                      color: const Color(0xFF2F4157), width: 2)
-                                  : null,
-                              boxShadow: [
-                                BoxShadow(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredList.length,
+                      padding: const EdgeInsets.only(bottom: 100),
+                      itemBuilder: (context, i) {
+                        final alat = filteredList[i];
+
+                        // 🔑 SATU BARIS INI KUNCI SEMUANYA
+                        final status = alat.statusAlat.toLowerCase().trim();
+
+                        final bool isSelected =
+                            _keranjangAlat.any((item) => item.id == alat.id);
+
+                        return Center(
+                          child: GestureDetector(
+                            onTap: () => _toggleKeranjang(alat),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 20),
+                              width: 329,
+                              height: 142,
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: isSelected
+                                    ? Border.all(
+                                        color: const Color(0xFF2F4157),
+                                        width: 2)
+                                    : null,
+                                boxShadow: [
+                                  BoxShadow(
                                     color: Colors.black.withOpacity(0.05),
                                     blurRadius: 10,
-                                    offset: const Offset(0, 4))
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(alat.gambar,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      alat.gambar,
                                       width: 100,
                                       height: 100,
-                                      fit: BoxFit.cover),
-                                ),
-                                const SizedBox(width: 15),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(alat.namaAlat,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 15),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          alat.namaAlat,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.poppins(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
-                                              color: const Color(0xFF2F4157))),
-                                      const SizedBox(height: 12),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: alat.statusAlat == 'Tersedia'
-                                              ? const Color(0xFF27AE60)
-                                              : Colors.orange,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: const Color(0xFF2F4157),
+                                          ),
                                         ),
-                                        child: Text(alat.statusAlat,
+                                        const SizedBox(height: 12),
+
+                                        // ✅ BADGE STATUS (SUDAH BENAR)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: status == 'tersedia'
+                                                ? const Color(0xFF27AE60)
+                                                : Colors.orange,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            status,
                                             style: GoogleFonts.poppins(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold)),
-                                      ),
-                                    ],
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                if (isSelected)
-                                  const Icon(Icons.check_circle,
-                                      color: Color(0xFF2F4157)),
-                              ],
+                                  if (isSelected)
+                                    const Icon(Icons.check_circle,
+                                        color: Color(0xFF2F4157)),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
+                        );
+                      });
                 },
               ),
             ],

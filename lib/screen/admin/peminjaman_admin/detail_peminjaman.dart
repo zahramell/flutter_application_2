@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class DetailPeminjamanAdminPage extends StatefulWidget {
   final Map<String, dynamic> data;
@@ -16,7 +15,6 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
   final supabase = Supabase.instance.client;
 
   late TextEditingController jatuhTempoController;
-  late String status;
 
   @override
   void initState() {
@@ -24,25 +22,39 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
     jatuhTempoController = TextEditingController(
       text: widget.data['tanggal_jatuh_tempo'] ?? '',
     );
-    status = widget.data['status_persetujuan'];
   }
 
-  // ================= UPDATE =================
+  // ================= UPDATE (HANYA TANGGAL + VALIDASI) =================
   Future<void> updatePeminjaman() async {
+    // ===== VALIDASI =====
+    if (jatuhTempoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Tanggal jatuh tempo wajib dipilih",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    // ===== UPDATE DATABASE =====
     await supabase.from('peminjaman').update({
       'tanggal_jatuh_tempo': jatuhTempoController.text,
-      'status_persetujuan': status,
     }).eq('id_peminjaman', widget.data['id_peminjaman']);
 
-    Navigator.pop(context, true);
-  }
-
-  // ================= DELETE =================
-  Future<void> hapusPeminjaman() async {
-    await supabase
-        .from('peminjaman')
-        .delete()
-        .eq('id_peminjaman', widget.data['id_peminjaman']);
+    // ===== FEEDBACK SUKSES =====
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "Tanggal jatuh tempo berhasil diperbarui",
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
 
     Navigator.pop(context, true);
   }
@@ -64,7 +76,7 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ================= PROFIL PEMINJAM =================
-            _profilDenganAksi(profil),
+            _profilPeminjam(profil),
 
             const SizedBox(height: 16),
 
@@ -83,52 +95,111 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
             ),
             const SizedBox(height: 12),
 
-            TextField(
+            // ===== DATE PICKER =====
+            TextFormField(
               controller: jatuhTempoController,
+              readOnly: true,
               decoration: const InputDecoration(
                 labelText: "Tanggal Jatuh Tempo",
                 border: OutlineInputBorder(),
+                suffixIcon: Icon(Icons.calendar_month),
               ),
-            ),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2100),
+                );
 
-            const SizedBox(height: 12),
-
-            DropdownButtonFormField<String>(
-              value: status,
-              decoration: const InputDecoration(
-                labelText: "Status Peminjaman",
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'Di Verifikasi',
-                  child: Text('Di Verifikasi'),
-                ),
-                DropdownMenuItem(
-                  value: 'Disetujui',
-                  child: Text('Disetujui'),
-                ),
-                DropdownMenuItem(
-                  value: 'Ditolak',
-                  child: Text('Ditolak'),
-                ),
-              ],
-              onChanged: (val) => setState(() => status = val!),
+                if (picked != null) {
+                  setState(() {
+                    jatuhTempoController.text =
+                        "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+                  });
+                }
+              },
             ),
 
             const SizedBox(height: 24),
 
-            // ================= BUTTON SIMPAN =================
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: updatePeminjaman,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2F4157),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+            // ================= BUTTON =================
+            Row(
+              children: [
+                // ===== BATAL =====
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: Text(
+                            "Batalkan Perubahan",
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.bold),
+                          ),
+                          content: Text(
+                            "Perubahan yang kamu lakukan tidak akan disimpan. Yakin ingin kembali?",
+                            style: GoogleFonts.poppins(),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child:
+                                  Text("Tidak", style: GoogleFonts.poppins()),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context); // tutup dialog
+                                Navigator.pop(context); // kembali
+                              },
+                              child: Text("Ya, Batal",
+                                  style: GoogleFonts.poppins()),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF2F4157)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Batal",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF2F4157),
+                      ),
+                    ),
+                  ),
                 ),
-                child: const Text("Simpan Perubahan"),
-              ),
+
+                const SizedBox(width: 12),
+
+                // ===== SIMPAN =====
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: updatePeminjaman,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F4157),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Simpan Perubahan",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -136,8 +207,8 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
     );
   }
 
-  // ================= WIDGET PROFIL + AKSI =================
-  Widget _profilDenganAksi(Map<String, dynamic> profil) {
+  // ================= PROFIL =================
+  Widget _profilPeminjam(Map<String, dynamic> profil) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -164,43 +235,21 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
                 : null,
           ),
           const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profil['nama'],
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Sebagai : ${profil['role']}",
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InkWell(
-                onTap: updatePeminjaman,
-                child: _iconAction(
-                  icon: Symbols.edit,
-                  color: const Color(0xFF2F4157),
+              Text(
+                profil['nama'],
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: hapusPeminjaman,
-                child: _iconAction(
-                  icon: Symbols.delete,
-                  color: Colors.red,
+              Text(
+                "Sebagai : ${profil['role']}",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[700],
                 ),
               ),
             ],
@@ -210,7 +259,7 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
     );
   }
 
-  // ================= DETAIL PEMINJAMAN =================
+  // ================= DETAIL =================
   Widget _detailPeminjaman(Map<String, dynamic> alat) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -238,9 +287,14 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
           const SizedBox(height: 12),
           _rowDetail("Nama Alat", alat['nama_alat']),
           _rowDetail("Tanggal Pinjam", widget.data['tanggal_pinjam']),
-          _rowDetail("Jatuh Tempo",
-              widget.data['tanggal_jatuh_tempo'] ?? "Belum ditentukan"),
-          _rowDetail("Status", widget.data['status_persetujuan']),
+          _rowDetail(
+            "Jatuh Tempo",
+            widget.data['tanggal_jatuh_tempo'] ?? "Belum ditentukan",
+          ),
+          _rowDetail(
+            "Status",
+            widget.data['status_persetujuan'],
+          ),
         ],
       ),
     );
@@ -272,17 +326,6 @@ class _DetailPeminjamanAdminPageState extends State<DetailPeminjamanAdminPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _iconAction({required IconData icon, required Color color}) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 18, color: Colors.white),
     );
   }
 }

@@ -23,3 +23,4 @@ class LiatStatusPage extends StatelessWidget {
     );
   }
 }
+

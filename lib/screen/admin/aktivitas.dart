@@ -1,101 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AktivitasAdminPage extends StatefulWidget {
-  const AktivitasAdminPage({super.key});
+class LogAktivitasAdminPage extends StatefulWidget {
+  const LogAktivitasAdminPage({super.key});
 
   @override
-  State<AktivitasAdminPage> createState() => _AktivitasAdminPageState();
+  State<LogAktivitasAdminPage> createState() => _LogAktivitasAdminPageState();
 }
 
-class _AktivitasAdminPageState extends State<AktivitasAdminPage> {
-  final SupabaseClient _supabase = Supabase.instance.client;
+class _LogAktivitasAdminPageState extends State<LogAktivitasAdminPage> {
+  final supabase = Supabase.instance.client;
 
-  bool _loading = true;
-  List<Map<String, dynamic>> _aktivitasList = [];
+  // ================= FETCH LOG =================
+  Future<List<Map<String, dynamic>>> fetchLog() async {
+    final res = await supabase
+        .from('log_aktivitas')
+        .select('''
+          id_log,
+          aktivitas,
+          waktu,
+          profiles (
+            nama,
+            role
+          )
+        ''')
+        .order('waktu', ascending: false);
 
-  @override
-  void initState() {
-    super.initState();
-    _ambilAktivitas();
+    return List<Map<String, dynamic>>.from(res);
   }
 
-  Future<void> _ambilAktivitas() async {
-    try {
-      final response = await _supabase
-          .from('log_aktivitas')
-          .select()
-          .order('waktu', ascending: false);
-
-      setState(() {
-        _aktivitasList = List<Map<String, dynamic>>.from(response);
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
-    }
+  // ================= FORMAT WAKTU =================
+  String formatWaktu(String waktu) {
+    final dt = DateTime.parse(waktu);
+    return "${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute}";
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Aktivitas',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: const Text("Log Aktivitas"),
         centerTitle: true,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _aktivitasList.isEmpty
-              ? Center(
-                  child: Text(
-                    'Belum ada aktivitas',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _aktivitasList.length,
-                  itemBuilder: (context, index) {
-                    final data = _aktivitasList[index];
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: fetchLog(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: const Icon(
-                          Symbols.history_rounded,
-                          color: Color(0xFF2F4157),
-                        ),
-                        title: Text(
-                          data['aktivitas'] ?? '-',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                        ),
-                        subtitle: Text(
-                          data['waktu']?.toString() ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Text(
+                "Tidak ada aktivitas",
+                style: GoogleFonts.poppins(),
+              ),
+            );
+          }
+
+          final data = snapshot.data!;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              final log = data[index];
+              final profil = log['profiles'];
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profil['nama'],
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      "Role : ${profil['role']}",
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      log['aktivitas'],
+                      style: GoogleFonts.poppins(fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      formatWaktu(log['waktu']),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

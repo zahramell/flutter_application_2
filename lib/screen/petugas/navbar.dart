@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_2/screen/petugas/beranda.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'operasional.dart';
+import 'laporan.dart';
 import 'logout.dart';
 
 class MainNavigationPetugas extends StatefulWidget {
@@ -17,9 +19,9 @@ class _MainNavigationPetugasState extends State<MainNavigationPetugas> {
   // Daftar halaman untuk setiap menu navbar
   final List<Widget> _pages = [
     const BerandaPetugas(),
-    const Center(child: Text("Halaman Operasional")),
-    const Center(child: Text("Halaman Laporan")),
-    PengaturanScreen(),
+    PersetujuanPage(),
+    LaporanPage(),
+    PengaturanPetugasPage(),
   ];
 
   @override
