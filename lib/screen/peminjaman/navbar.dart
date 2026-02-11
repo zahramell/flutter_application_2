@@ -7,6 +7,7 @@ import 'profil.dart';
 import 'tab_index_notifier.dart';
 import 'notifikasi.dart';
 
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -20,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const BerandaScreen(role: 'peminjam'),
     const AktivitasScreen(),
-    const LogAktivitasPage(),
+    NotifikasiPetugasPage(),
     const PengaturanScreen(),
   ];
 

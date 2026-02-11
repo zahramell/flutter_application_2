@@ -61,25 +61,41 @@ class _BerandaScreenState extends State<BerandaScreen> {
     }
   }
 
-  Future<void> _simpanPeminjaman() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return;
+Future<void> _simpanPeminjaman() async {
+  final user = supabase.auth.currentUser;
+  if (user == null) return;
 
-    for (final alat in _keranjangAlat) {
-      // 1️⃣ simpan ke tabel peminjaman
-      await supabase.from('peminjaman').insert({
-        'id_peminjam': user.id,
-        'id_alat': alat.id,
-        'tanggal_pinjam': DateTime.now().toIso8601String(),
-        'status_persetujuan': 'menunggu',
-      });
-
-      // 2️⃣ UPDATE STATUS ALAT (INI YANG KURANG)
-      await supabase.from('alat').update({
-        'status_alat': 'Dipinjam',
-      }).eq('id_alat', alat.id!);
-    }
+  if (_selectedTanggalPinjam == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          "Pilih tanggal pinjam terlebih dahulu",
+          style: GoogleFonts.poppins(),
+        ),
+      ),
+    );
+    return;
   }
+
+  for (final alat in _keranjangAlat) {
+    await supabase.from('peminjaman').insert({
+      'id_peminjam': user.id,
+      'id_alat': alat.id,
+      'tanggal_pinjam': _selectedTanggalPinjam!
+          .toIso8601String()
+          .split('T')[0], // ✅ pakai tanggal yang dipilih
+      'tanggal_jatuh_tempo': _selectedTanggalKembali!
+          .toIso8601String()
+          .split('T')[0], // ✅ simpan jatuh tempo juga
+      'status_persetujuan': 'menunggu',
+    });
+
+    await supabase.from('alat').update({
+      'status_alat': 'Dipinjam',
+    }).eq('id_alat', alat.id!);
+  }
+}
+
 
   Future<void> tolak(int idPeminjaman, int idAlat) async {
     // 1️⃣ ubah status peminjaman

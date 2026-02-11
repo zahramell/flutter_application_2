@@ -17,6 +17,7 @@ class LiatStatusPage extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);      // tutup popup
             tabIndexNotifier.value = 1;  // ⬅️ PINDAH KE AKTIVITAS
+            
           },
         ),
       ],

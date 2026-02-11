@@ -15,7 +15,6 @@ class _FormUserPageState extends State<FormUserPage> {
   final supabase = Supabase.instance.client;
 
   late TextEditingController namaC;
-  late TextEditingController emailC;
   late TextEditingController fotoC;
 
   String role = 'petugas';
@@ -25,31 +24,50 @@ class _FormUserPageState extends State<FormUserPage> {
   void initState() {
     super.initState();
     namaC = TextEditingController(text: widget.data?['nama'] ?? '');
-    emailC = TextEditingController(text: widget.data?['email'] ?? '');
     fotoC = TextEditingController(text: widget.data?['foto'] ?? '');
     role = (widget.data?['role'] ?? 'petugas').toLowerCase();
   }
 
+  // =============================
+  // SIMPAN DATA
+  // =============================
   Future<void> simpan() async {
-    final payload = {
-      'nama': namaC.text,
-      'email': emailC.text,
-      'foto': fotoC.text,
-      'role': role,
-    };
+    try {
+      final payload = {
+        'nama': namaC.text.trim(),
+        'foto': fotoC.text.trim(),
+        'role': role,
+      };
 
-    if (isEdit) {
-      await supabase
-          .from('profiles')
-          .update(payload)
-          .eq('id', widget.data!['id']);
-    } else {
-      await supabase.from('profiles').insert(payload);
+      if (isEdit) {
+        await supabase
+            .from('profiles')
+            .update(payload)
+            .eq('id', widget.data!['id']);
+      } else {
+        await supabase.from('profiles').insert({
+          'id': DateTime.now().millisecondsSinceEpoch
+              .toString(), // ID manual supaya tidak null
+          ...payload,
+        });
+      }
+
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      debugPrint("ERROR SIMPAN USER: $e");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Gagal menyimpan user"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
-
-    Navigator.pop(context, true);
   }
 
+  // =============================
+  // STYLE INPUT
+  // =============================
   InputDecoration inputStyle() => InputDecoration(
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -71,6 +89,9 @@ class _FormUserPageState extends State<FormUserPage> {
         ),
       );
 
+  // =============================
+  // UI
+  // =============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,81 +112,109 @@ class _FormUserPageState extends State<FormUserPage> {
       body: Center(
         child: SizedBox(
           width: 320,
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              GestureDetector(
-                child: Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE7D6),
-                    borderRadius: BorderRadius.circular(16),
-                    image: fotoC.text.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(fotoC.text),
-                            fit: BoxFit.cover,
-                          )
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+
+                // ===== FOTO =====
+                GestureDetector(
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE7D6),
+                      borderRadius: BorderRadius.circular(16),
+                      image: fotoC.text.isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(fotoC.text),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: fotoC.text.isEmpty
+                        ? const Icon(Symbols.person, size: 48)
                         : null,
                   ),
-                  child: fotoC.text.isEmpty
-                      ? const Icon(Symbols.person, size: 48)
-                      : null,
                 ),
-              ),
-              const SizedBox(height: 28),
-              label("Nama"),
-              TextField(controller: namaC, decoration: inputStyle()),
-              const SizedBox(height: 16),
-              label("Email"),
-              TextField(controller: emailC, decoration: inputStyle()),
-              const SizedBox(height: 16),
-              label("URL Foto"),
-              TextField(controller: fotoC, decoration: inputStyle()),
-              const SizedBox(height: 16),
-              label("Role"),
-              DropdownButtonFormField<String>(
-                value: role,
-                decoration: inputStyle(),
-                items: const [
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                  DropdownMenuItem(value: 'petugas', child: Text('Petugas')),
-                  DropdownMenuItem(value: 'peminjam', child: Text('Peminjam')),
-                ],
-                onChanged: (v) => setState(() => role = v!),
-              ),
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.shade300,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+
+                const SizedBox(height: 28),
+
+                // ===== NAMA =====
+                label("Nama"),
+                TextField(
+                  controller: namaC,
+                  decoration: inputStyle(),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ===== FOTO URL =====
+                label("URL Foto"),
+                TextField(
+                  controller: fotoC,
+                  decoration: inputStyle(),
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ===== ROLE =====
+                label("Role"),
+                DropdownButtonFormField<String>(
+                  value: role,
+                  decoration: inputStyle(),
+                  items: const [
+                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    DropdownMenuItem(value: 'petugas', child: Text('Petugas')),
+                    DropdownMenuItem(value: 'peminjam', child: Text('Peminjam')),
+                  ],
+                  onChanged: (v) => setState(() => role = v!),
+                ),
+
+                const SizedBox(height: 28),
+
+                // ===== BUTTON =====
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.shade300,
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          "Batal",
+                          style: GoogleFonts.poppins(
+                              color: Colors.black54),
+                        ),
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text("Batal",
-                          style: GoogleFonts.poppins(color: Colors.black54)),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2F4157),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color(0xFF2F4157),
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: simpan,
+                        child: Text(
+                          "Simpan",
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600),
+                        ),
                       ),
-                      onPressed: simpan,
-                      child: Text("Simpan",
-                          style:
-                              GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

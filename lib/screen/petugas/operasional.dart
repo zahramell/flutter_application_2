@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'detail_pengembalian.dart';
 
 class PersetujuanPage extends StatefulWidget {
   const PersetujuanPage({super.key});
@@ -14,7 +15,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   int tab = 0; // 0 = Persetujuan, 1 = Pengembalian
 
   // =============================
-  // FETCH DATA (SUDAH BENAR)
+  // FETCH DATA
   // =============================
   Future<List<Map<String, dynamic>>> fetchData() async {
     if (tab == 0) {
@@ -32,19 +33,21 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
 
       return List<Map<String, dynamic>>.from(res);
     } else {
-      // ===== TAB PENGEMBALIAN =====
       final res = await supabase.from('pengembalian').select('''
-            id_pengembalian,
-            tanggal_kembali_riil,
-            kondisi_alat,
-            denda,
-            peminjaman:id_peminjaman (
-              profiles!peminjaman_id_peminjam_fkey ( nama, foto ),
-              alat!peminjaman_id_alat_fkey ( nama_alat )
-            )
-          ''').order('tanggal_kembali_riil', ascending: false);
+  id_pengembalian,
+  id_peminjaman,
+  tanggal_kembali_riil,
+  kondisi_alat,
+  denda,
+  peminjaman:id_peminjaman (
+    id_peminjaman,
+    profiles!peminjaman_id_peminjam_fkey ( nama, foto ),
+    alat!peminjaman_id_alat_fkey ( id_alat, nama_alat )
+  )
+''').order('tanggal_kembali_riil', ascending: false);
 
-      return List<Map<String, dynamic>>.from(res);
+return List<Map<String, dynamic>>.from(res);
+
     }
   }
 
@@ -86,8 +89,10 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
                 child: FutureBuilder<List<Map<String, dynamic>>>(
                   future: fetchData(),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator());
                     }
 
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -106,8 +111,10 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
                       itemBuilder: (context, i) {
                         final d = data[i];
 
+                        // =============================
+                        // TAB PERSETUJUAN
+                        // =============================
                         if (tab == 0) {
-                          // ===== CARD PERSETUJUAN =====
                           return _cardPersetujuan(
                             nama: d['profiles']['nama'],
                             foto: d['profiles']['foto'],
@@ -115,18 +122,32 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
                             tanggal: d['tanggal_pinjam'],
                             id: d['id_peminjaman'],
                           );
-                        } else {
-                          // ===== CARD PENGEMBALIAN =====
-                          final p = d['peminjaman'];
-                          return _cardPengembalian(
+                        }
+
+                        // =============================
+                        // TAB PENGEMBALIAN (BISA DIKLIK)
+                        // =============================
+                        final p = d['peminjaman'];
+
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    DetailPengembalianPage(data: d),
+                              ),
+                            );
+                          },
+                          child: _cardPengembalian(
                             nama: p['profiles']['nama'],
                             foto: p['profiles']['foto'],
                             alat: p['alat']['nama_alat'],
                             kondisi: d['kondisi_alat'],
                             denda: d['denda'],
                             tanggal: d['tanggal_kembali_riil'],
-                          );
-                        }
+                          ),
+                        );
                       },
                     );
                   },
@@ -182,18 +203,20 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       foto: foto,
       children: [
         Text("Alat: $alat", style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Tgl pinjam: $tanggal", style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Tgl pinjam: $tanggal",
+            style: GoogleFonts.poppins(fontSize: 12)),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: () async {
                   await supabase
                       .from('peminjaman')
-                      .update({'status_persetujuan': 'disetujui'}).eq(
-                          'id_peminjaman', id);
+                      .update({'status_persetujuan': 'disetujui'})
+                      .eq('id_peminjaman', id);
                   setState(() {});
                 },
                 child: const Text("Setuju"),
@@ -202,12 +225,13 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
                   await supabase
                       .from('peminjaman')
-                      .update({'status_persetujuan': 'ditolak'}).eq(
-                          'id_peminjaman', id);
+                      .update({'status_persetujuan': 'ditolak'})
+                      .eq('id_peminjaman', id);
                   setState(() {});
                 },
                 child: const Text("Tolak"),
@@ -235,8 +259,10 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       foto: foto,
       children: [
         Text("Alat: $alat", style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Tgl kembali: $tanggal", style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Kondisi: $kondisi", style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Tgl kembali: $tanggal",
+            style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Kondisi: $kondisi",
+            style: GoogleFonts.poppins(fontSize: 12)),
         Text(
           "Denda: Rp $denda",
           style: GoogleFonts.poppins(
@@ -250,7 +276,7 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   }
 
   // =============================
-  // BASE CARD (AVATAR)
+  // BASE CARD
   // =============================
   Widget _baseCard({
     required String nama,
@@ -259,15 +285,15 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
   }) {
     return Center(
       child: Container(
-        width: 329, // ✅ lebar card
+        width: 329,
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white, // ✅ card putih
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08), // ✅ bayangan halus
+              color: Colors.black.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -280,12 +306,11 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.grey[300],
                   backgroundImage: foto != null && foto.isNotEmpty
                       ? NetworkImage(foto)
                       : null,
                   child: foto == null || foto.isEmpty
-                      ? const Icon(Icons.person, color: Colors.white)
+                      ? const Icon(Icons.person)
                       : null,
                 ),
                 const SizedBox(width: 10),

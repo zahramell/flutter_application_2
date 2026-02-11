@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/widgets.dart' as pw;
 
 class LaporanPage extends StatefulWidget {
   const LaporanPage({super.key});
@@ -14,158 +12,252 @@ class LaporanPage extends StatefulWidget {
 class _LaporanPageState extends State<LaporanPage> {
   final supabase = Supabase.instance.client;
 
-  late Future<List<Map<String, dynamic>>> _futureLaporan;
-
-  @override
-  void initState() {
-    super.initState();
-    _futureLaporan = fetchLaporan();
-  }
-
-  // ================= AMBIL LAPORAN =================
   Future<List<Map<String, dynamic>>> fetchLaporan() async {
     final res = await supabase.from('peminjaman').select('''
+      id_peminjaman,
       tanggal_pinjam,
-      tanggal_jatuh_tempo,
       status_persetujuan,
-      profiles(nama),
-      alat(nama_alat),
-      pengembalian(
-        tanggal_kembali_riil,
-        denda
-      )
+      profiles!peminjaman_id_peminjam_fkey ( nama ),
+      alat!peminjaman_id_alat_fkey ( nama_alat ),
+      pengembalian ( denda, tanggal_kembali_riil )
     ''').order('tanggal_pinjam', ascending: false);
 
     return List<Map<String, dynamic>>.from(res);
   }
 
-  // ================= PRINT PDF =================
-  Future<void> printLaporan(List<Map<String, dynamic>> data) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.Page(
-        build: (context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                "LAPORAN PEMINJAMAN & PENGEMBALIAN",
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.SizedBox(height: 12),
-              pw.Table.fromTextArray(
-                headers: [
-                  'No',
-                  'Peminjam',
-                  'Alat',
-                  'Pinjam',
-                  'Kembali',
-                  'Status',
-                  'Denda'
-                ],
-                data: List.generate(data.length, (i) {
-                  final d = data[i];
-                  final kembali = d['pengembalian'];
-
-                  return [
-                    (i + 1).toString(),
-                    d['profiles']['nama'],
-                    d['alat']['nama_alat'],
-                    d['tanggal_pinjam'] ?? '-',
-                    kembali != null
-                        ? kembali['tanggal_kembali_riil'] ?? '-'
-                        : '-',
-                    d['status_persetujuan'],
-                    kembali != null ? 'Rp ${kembali['denda'] ?? 0}' : '-',
-                  ];
-                }),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(onLayout: (_) => pdf.save());
+  String formatTanggal(String? date) {
+    if (date == null) return "-";
+    final d = DateTime.parse(date);
+    return "${d.day}/${d.month}/${d.year}";
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Laporan"),
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _futureLaporan,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("Belum ada data laporan"));
-          }
-
-          final data = snapshot.data!;
-
-          return Column(
+      backgroundColor: const Color(0xFFF6F6F6),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: data.length,
-                  itemBuilder: (context, i) {
-                    final d = data[i];
-                    final kembali = d['pengembalian'];
+              Text(
+                "Laporan Transaksi",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: Text("${i + 1}"),
-                        title: Text(
-                          d['profiles']['nama'],
-                          style:
-                              GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: fetchLaporan(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData ||
+                        snapshot.data!.isEmpty) {
+                      return Center(
+                        child: Text(
+                          "Belum ada data laporan",
+                          style: GoogleFonts.poppins(),
                         ),
-                        subtitle: Text(
-                          "${d['alat']['nama_alat']}\n"
-                          "Pinjam: ${d['tanggal_pinjam']}\n"
-                          "Kembali: ${kembali != null ? kembali['tanggal_kembali_riil'] ?? '-' : '-'}\n"
-                          "Status: ${d['status_persetujuan']}",
-                          style: GoogleFonts.poppins(fontSize: 12),
-                        ),
-                        trailing: Text(
-                          kembali != null ? "Rp ${kembali['denda'] ?? 0}" : "-",
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.red,
+                      );
+                    }
+
+                    final data = snapshot.data!;
+
+                    int totalTransaksi = data.length;
+                    int totalDenda = 0;
+
+                    for (var item in data) {
+                      final pengembalian =
+                          (item['pengembalian'] as List).isNotEmpty
+                              ? item['pengembalian'][0]
+                              : null;
+
+                      if (pengembalian != null) {
+                        totalDenda +=
+                            (pengembalian['denda'] ?? 0) as int;
+                      }
+                    }
+
+                    return Column(
+                      children: [
+
+                        // ===== REKAP =====
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          margin:
+                              const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius:
+                                BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Total Transaksi : $totalTransaksi",
+                                style: GoogleFonts.poppins(
+                                    fontWeight:
+                                        FontWeight.w600),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Total Denda : Rp $totalDenda",
+                                style: GoogleFonts.poppins(
+                                  color: totalDenda > 0
+                                      ? Colors.red
+                                      : Colors.green,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+
+                        // ===== LIST =====
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: data.length,
+                            itemBuilder:
+                                (context, index) {
+                              final d = data[index];
+                              final pengembalian =
+                                  (d['pengembalian']
+                                              as List)
+                                          .isNotEmpty
+                                      ? d['pengembalian']
+                                          [0]
+                                      : null;
+
+                              final String status =
+                                  d['status_persetujuan'];
+
+                              final int denda =
+                                  pengembalian != null
+                                      ? (pengembalian[
+                                              'denda'] ??
+                                          0)
+                                      : 0;
+
+                              return _card(
+                                nama: d['profiles']
+                                    ['nama'],
+                                alat: d['alat']
+                                    ['nama_alat'],
+                                tanggal: formatTanggal(
+                                    d['tanggal_pinjam']),
+                                status: status,
+                                denda: denda,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     );
                   },
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-              // ===== BUTTON PRINT =====
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => printLaporan(data),
-                    icon: const Icon(Icons.print),
-                    label: const Text("CETAK LAPORAN"),
+  Widget _card({
+    required String nama,
+    required String alat,
+    required String tanggal,
+    required String status,
+    required int denda,
+  }) {
+    Color warnaStatus;
+
+    switch (status) {
+      case 'disetujui':
+        warnaStatus = Colors.blue;
+        break;
+      case 'ditolak':
+        warnaStatus = Colors.red;
+        break;
+      case 'selesai':
+        warnaStatus = Colors.green;
+        break;
+      default:
+        warnaStatus = Colors.orange;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+          Text(
+            nama,
+            style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text("Alat : $alat",
+              style:
+                  GoogleFonts.poppins(fontSize: 12)),
+          Text("Tanggal : $tanggal",
+              style:
+                  GoogleFonts.poppins(fontSize: 12)),
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets
+                    .symmetric(
+                        horizontal: 12,
+                        vertical: 4),
+                decoration: BoxDecoration(
+                  color:
+                      warnaStatus.withOpacity(0.15),
+                  borderRadius:
+                      BorderRadius.circular(12),
+                ),
+                child: Text(
+                  status.toUpperCase(),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: warnaStatus,
+                    fontWeight:
+                        FontWeight.w600,
                   ),
                 ),
               ),
+              Text(
+                "Denda: Rp $denda",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: denda > 0
+                      ? Colors.red
+                      : Colors.grey,
+                ),
+              ),
             ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
