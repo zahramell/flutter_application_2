@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../services/pengembalian_service.dart';
-
+import 'pengembalian.dart';
 
 class AktivitasScreen extends StatefulWidget {
   const AktivitasScreen({super.key});
@@ -13,12 +14,77 @@ class AktivitasScreen extends StatefulWidget {
 
 class _AktivitasScreenState extends State<AktivitasScreen> {
   final supabase = Supabase.instance.client;
-  final pengembalianService = PengembalianService();
+  late Future<List<Map<String, dynamic>>> _aktivitasFuture;
+  Timer? _autoRefreshTimer;
 
+  @override
+  void initState() {
+    super.initState();
+    _aktivitasFuture = fetchAktivitas();
 
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _reloadAktivitas();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _reloadAktivitas() {
+    if (!mounted) return;
+    setState(() {
+      _aktivitasFuture = fetchAktivitas();
+    });
+  }
+
+  void showSuccessPengembalian(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 70),
+                const SizedBox(height: 16),
+                Text(
+                  "Pengembalian Alat\nBerhasil",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Alat telah dikembalikan.\nTerima kasih!",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 13),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // tutup dialog
+                    _reloadAktivitas(); // refresh list
+                  },
+                  child: const Text("Lihat Status"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   // =============================
-  // FETCH DATA
+  // AMBIL DATA PEMINJAMAN USER
   // =============================
   Future<List<Map<String, dynamic>>> fetchAktivitas() async {
     final user = supabase.auth.currentUser;
@@ -31,12 +97,25 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
           tanggal_pinjam,
           tanggal_jatuh_tempo,
           status_persetujuan,
-          alat:id_alat(nama_alat, gambar)
+          alat:id_alat(nama_alat, gambar),
+          profiles:id_peminjam(nama)
         ''')
         .eq('id_peminjam', user.id)
         .order('tanggal_pinjam', ascending: false);
 
     return List<Map<String, dynamic>>.from(res);
+  }
+
+  Future<void> tolakPeminjaman(int idPeminjaman, int idAlat) async {
+    // 1. Update status peminjaman
+    await supabase.from('peminjaman').update({
+      'status_persetujuan': 'ditolak',
+    }).eq('id_peminjaman', idPeminjaman);
+
+    // 2. KEMBALIKAN STATUS ALAT
+    await supabase.from('alat').update({
+      'status_alat': 'tersedia',
+    }).eq('id_alat', idAlat);
   }
 
   // =============================
@@ -75,7 +154,7 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
             // ===== LIST =====
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: fetchAktivitas(),
+                future: _aktivitasFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -98,8 +177,7 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                       final alat = data['alat'];
 
                       final String statusDb =
-                          (data['status_persetujuan'] ?? 'menunggu')
-                              .toString();
+                          data['status_persetujuan'] ?? 'menunggu';
 
                       return Center(
                         child: Container(
@@ -171,6 +249,50 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
                                   color: Colors.redAccent,
                                 ),
                               ),
+
+                              // ===== TOMBOL PENGEMBALIAN =====
+                              if (statusDb == 'disetujui')
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    height: 36,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            const Color(0xFF2F4157),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.push<bool>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                PengajuanPengembalianPage(
+                                              data: data,
+                                            ),
+                                          ),
+                                        ).then((berhasil) {
+                                          if (berhasil == true && mounted) {
+                                            showSuccessPengembalian(context);
+                                            _reloadAktivitas();
+                                          }
+                                        });
+                                      },
+                                      child: Text(
+                                        "Ajukan Pengembalian",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -187,27 +309,24 @@ class _AktivitasScreenState extends State<AktivitasScreen> {
   }
 
   // =============================
-  // STATUS BADGE
+  // BADGE STATUS (USER FRIENDLY)
   // =============================
   Widget _statusBadge(String status) {
     String label;
     Color color;
 
-    if (status == 'menunggu') {
-      label = 'Menunggu';
-      color = Colors.orange;
-    } else if (status == 'disetujui') {
+    if (status == 'disetujui') {
       label = 'Disetujui';
-      color = Colors.blue;
+      color = Colors.green;
     } else if (status == 'ditolak') {
       label = 'Ditolak';
       color = Colors.red;
     } else if (status == 'selesai') {
       label = 'Selesai';
-      color = Colors.green;
+      color = Colors.blue; // bisa diganti hijau juga
     } else {
-      label = status;
-      color = Colors.grey;
+      label = 'Diverifikasi';
+      color = Colors.orange;
     }
 
     return Container(

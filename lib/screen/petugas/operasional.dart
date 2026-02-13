@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +15,31 @@ class PersetujuanPage extends StatefulWidget {
 class _PersetujuanPageState extends State<PersetujuanPage> {
   final supabase = Supabase.instance.client;
   int tab = 0; // 0 = Persetujuan, 1 = Pengembalian
+  late Future<List<Map<String, dynamic>>> _dataFuture;
+  Timer? _autoRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _dataFuture = fetchData();
+
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _reloadData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _reloadData() {
+    if (!mounted) return;
+    setState(() {
+      _dataFuture = fetchData();
+    });
+  }
 
   // =============================
   // FETCH DATA
@@ -34,27 +61,34 @@ class _PersetujuanPageState extends State<PersetujuanPage> {
       return List<Map<String, dynamic>>.from(res);
     } else {
       final res = await supabase.from('pengembalian').select('''
-  id_pengembalian,
-  id_peminjaman,
-  tanggal_kembali_riil,
-  kondisi_alat,
-  denda,
-  peminjaman:id_peminjaman (
-    id_peminjaman,
-    profiles!peminjaman_id_peminjam_fkey ( nama, foto ),
-    alat!peminjaman_id_alat_fkey ( id_alat, nama_alat )
-  )
-''').order('tanggal_kembali_riil', ascending: false);
+      id_pengembalian,
+      id_peminjaman,
+      tanggal_kembali_riil,
+      kondisi_alat,
+      denda,
+      peminjaman:id_peminjaman (
+        id_peminjaman,
+        status_persetujuan,
+        profiles!peminjaman_id_peminjam_fkey ( nama, foto ),
+        alat!peminjaman_id_alat_fkey ( id_alat, nama_alat )
+      )
+    ''').order('tanggal_kembali_riil', ascending: false);
 
-return List<Map<String, dynamic>>.from(res);
+// 🔥 FILTER DI FLUTTER
+      final filtered = List<Map<String, dynamic>>.from(res)
+          .where((e) =>
+              e['peminjaman'] != null &&
+              e['peminjaman']['status_persetujuan'] != 'selesai')
+          .toList();
 
+      return filtered;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: Colors.white, // ✅ BACKGROUND PUTIH
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -87,12 +121,10 @@ return List<Map<String, dynamic>>.from(res);
               // =============================
               Expanded(
                 child: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: fetchData(),
+                  future: _dataFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
                     }
 
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -130,14 +162,17 @@ return List<Map<String, dynamic>>.from(res);
                         final p = d['peminjaman'];
 
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    DetailPengembalianPage(data: d),
+                                builder: (_) => DetailPengembalianPage(data: d),
                               ),
                             );
+
+                            if (result == true && mounted) {
+                              _reloadData();
+                            }
                           },
                           child: _cardPengembalian(
                             nama: p['profiles']['nama'],
@@ -167,7 +202,10 @@ return List<Map<String, dynamic>>.from(res);
     final active = tab == i;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => tab = i),
+        onTap: () {
+          setState(() => tab = i);
+          _reloadData();
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
@@ -203,21 +241,22 @@ return List<Map<String, dynamic>>.from(res);
       foto: foto,
       children: [
         Text("Alat: $alat", style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Tgl pinjam: $tanggal",
-            style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Tgl pinjam: $tanggal", style: GoogleFonts.poppins(fontSize: 12)),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
                   await supabase
                       .from('peminjaman')
-                      .update({'status_persetujuan': 'disetujui'})
-                      .eq('id_peminjaman', id);
-                  setState(() {});
+                      .update({'status_persetujuan': 'disetujui'}).eq(
+                          'id_peminjaman', id);
+                  _reloadData();
                 },
                 child: const Text("Setuju"),
               ),
@@ -225,14 +264,16 @@ return List<Map<String, dynamic>>.from(res);
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton(
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
                   await supabase
                       .from('peminjaman')
-                      .update({'status_persetujuan': 'ditolak'})
-                      .eq('id_peminjaman', id);
-                  setState(() {});
+                      .update({'status_persetujuan': 'ditolak'}).eq(
+                          'id_peminjaman', id);
+                  _reloadData();
                 },
                 child: const Text("Tolak"),
               ),
@@ -259,10 +300,8 @@ return List<Map<String, dynamic>>.from(res);
       foto: foto,
       children: [
         Text("Alat: $alat", style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Tgl kembali: $tanggal",
-            style: GoogleFonts.poppins(fontSize: 12)),
-        Text("Kondisi: $kondisi",
-            style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Tgl kembali: $tanggal", style: GoogleFonts.poppins(fontSize: 12)),
+        Text("Kondisi: $kondisi", style: GoogleFonts.poppins(fontSize: 12)),
         Text(
           "Denda: Rp $denda",
           style: GoogleFonts.poppins(

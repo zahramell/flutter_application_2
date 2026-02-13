@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_application_2/screen/login.dart';
@@ -29,6 +28,7 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
   Future<void> _loadProfilAdmin() async {
     try {
       final user = supabase.auth.currentUser;
+
       if (user == null) {
         setState(() => loading = false);
         return;
@@ -40,17 +40,22 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
           .eq('id', user.id)
           .maybeSingle();
 
-      final fotoPath = data?['foto'];
+      final rawFoto = data?['foto']?.toString().trim();
+      String? resolvedFoto;
+      if (rawFoto != null && rawFoto.isNotEmpty) {
+        if (rawFoto.startsWith('http://') || rawFoto.startsWith('https://')) {
+          resolvedFoto = rawFoto;
+        } else {
+          resolvedFoto =
+              supabase.storage.from('foto-profil').getPublicUrl(rawFoto);
+        }
+      }
 
       setState(() {
         nama = data?['nama'] ?? 'Admin';
         role = data?['role'] ?? 'admin';
         email = user.email ?? '-';
-
-        // 🔗 URL FOTO DARI SUPABASE STORAGE
-        fotoUrl = fotoPath != null
-            ? supabase.storage.from('foto-profil').getPublicUrl(fotoPath)
-            : null;
+        fotoUrl = resolvedFoto;
 
         loading = false;
       });
@@ -62,6 +67,7 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
 
   Future<void> _logout(BuildContext context) async {
     await supabase.auth.signOut();
+
     if (!context.mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -75,25 +81,30 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Logout',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text(
+        title: const Text(
+          'Logout',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
           'Apakah Anda yakin ingin keluar dari akun admin?',
-          style: GoogleFonts.poppins(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Batal', style: GoogleFonts.poppins()),
+            child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
             onPressed: () async {
               Navigator.pop(context);
               await _logout(context);
             },
-            child:
-                Text('Logout', style: GoogleFonts.poppins(color: Colors.white)),
+            child: const Text(
+              'Logout',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -105,8 +116,10 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Pengaturan Admin',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Pengaturan',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black,
@@ -120,11 +133,13 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      /// FOTO PROFIL DARI SUPABASE
+                      /// FOTO PROFIL
                       CircleAvatar(
                         radius: 40,
                         backgroundColor: Colors.blue.shade700,
@@ -143,28 +158,33 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
 
                       Text(
                         nama,
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600, fontSize: 15),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
                       ),
 
                       Text(
                         role.toUpperCase(),
-                        style: GoogleFonts.poppins(
-                            fontSize: 12, color: Colors.blueGrey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.blueGrey,
+                        ),
                       ),
 
                       const SizedBox(height: 4),
 
                       Text(
                         email,
-                        style: GoogleFonts.poppins(
-                            fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
                       ),
 
                       const SizedBox(height: 25),
                       const Divider(),
 
-                      /// LOGOUT
                       SizedBox(
                         width: double.infinity,
                         height: 45,
@@ -172,14 +192,16 @@ class _PengaturanAdminPageState extends State<PengaturanAdminPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           onPressed: () => _konfirmasiLogout(context),
-                          child: Text(
+                          child: const Text(
                             'LOGOUT',
-                            style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),

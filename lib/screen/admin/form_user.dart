@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,26 +17,50 @@ class _FormUserPageState extends State<FormUserPage> {
   final supabase = Supabase.instance.client;
 
   late TextEditingController namaC;
+  late TextEditingController emailC;
   late TextEditingController fotoC;
 
   String role = 'petugas';
+  bool saving = false;
   bool get isEdit => widget.data != null;
 
   @override
   void initState() {
     super.initState();
     namaC = TextEditingController(text: widget.data?['nama'] ?? '');
+    emailC = TextEditingController(text: widget.data?['email'] ?? '');
     fotoC = TextEditingController(text: widget.data?['foto'] ?? '');
     role = (widget.data?['role'] ?? 'petugas').toLowerCase();
+  }
+
+  @override
+  void dispose() {
+    namaC.dispose();
+    emailC.dispose();
+    fotoC.dispose();
+    super.dispose();
   }
 
   // =============================
   // SIMPAN DATA
   // =============================
   Future<void> simpan() async {
+    if (namaC.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Nama wajib diisi"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     try {
+      setState(() => saving = true);
+
       final payload = {
         'nama': namaC.text.trim(),
+        'email': emailC.text.trim(),
         'foto': fotoC.text.trim(),
         'role': role,
       };
@@ -62,6 +88,8 @@ class _FormUserPageState extends State<FormUserPage> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) setState(() => saving = false);
     }
   }
 
@@ -159,6 +187,16 @@ class _FormUserPageState extends State<FormUserPage> {
 
                 const SizedBox(height: 16),
 
+                // ===== EMAIL =====
+                label("Email"),
+                TextField(
+                  controller: emailC,
+                  decoration: inputStyle(),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+
+                const SizedBox(height: 16),
+
                 // ===== ROLE =====
                 label("Role"),
                 DropdownButtonFormField<String>(
@@ -203,12 +241,21 @@ class _FormUserPageState extends State<FormUserPage> {
                           padding:
                               const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        onPressed: simpan,
-                        child: Text(
-                          "Simpan",
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600),
-                        ),
+                        onPressed: saving ? null : simpan,
+                        child: saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                "Simpan",
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600),
+                              ),
                       ),
                     ),
                   ],

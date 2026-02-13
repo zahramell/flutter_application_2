@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DetailPengembalianPage extends StatefulWidget {
-  final Map data; // data dari tab Pengembalian
+  final Map data;
 
   const DetailPengembalianPage({
     super.key,
@@ -11,22 +11,39 @@ class DetailPengembalianPage extends StatefulWidget {
   });
 
   @override
-  State<DetailPengembalianPage> createState() =>
-      _DetailPengembalianPageState();
+  State<DetailPengembalianPage> createState() => _DetailPengembalianPageState();
 }
 
 class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
   final supabase = Supabase.instance.client;
 
-  // ✅ TOTAL DENDA DARI SUPABASE (READ ONLY)
-  int get totalDenda => widget.data['denda'] ?? 0;
+  late Map<String, dynamic> dataAktif;
+
+  // ✅ SIMPAN DENDA ASLI DARI PEMINJAM (TIDAK BERUBAH)
+  late int dendaAwal;
+
+  // ✅ DENDA TAMBAHAN DARI DOUBLE CHECK PETUGAS
+  int dendaKerusakan = 0;
 
   String kondisiDipilih = "Baik";
   bool loading = false;
 
+  // ✅ TOTAL FIX (TIDAK AKAN DOBEL LAGI)
+  int get totalDenda => dendaAwal + dendaKerusakan;
+
+  @override
+  void initState() {
+    super.initState();
+
+    dataAktif = Map<String, dynamic>.from(widget.data);
+
+    // Ambil denda asli hanya sekali
+    dendaAwal = dataAktif['denda'] ?? 0;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final peminjaman = widget.data['peminjaman'];
+    final peminjaman = dataAktif['peminjaman'];
     final user = peminjaman['profiles'];
     final alat = peminjaman['alat'];
 
@@ -53,9 +70,7 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // =============================
-            // INFO PEMINJAM
-            // =============================
+            // ================= INFO PEMINJAM =================
             _card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,8 +87,16 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
                     style: GoogleFonts.poppins(fontSize: 12),
                   ),
                   Text(
-                    "Tgl Kembali: ${widget.data['tanggal_kembali_riil']}",
+                    "Tgl Kembali: ${dataAktif['tanggal_kembali_riil']}",
                     style: GoogleFonts.poppins(fontSize: 12),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Denda Awal: Rp $dendaAwal",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: dendaAwal > 0 ? Colors.red : Colors.green,
+                    ),
                   ),
                 ],
               ),
@@ -81,9 +104,7 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
 
             const SizedBox(height: 16),
 
-            // =============================
-            // KONDISI ALAT
-            // =============================
+            // ================= KONDISI =================
             _section(
               title: "Kondisi Alat Saat Dicek",
               child: Column(
@@ -97,9 +118,7 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
 
             const SizedBox(height: 16),
 
-            // =============================
-            // TOTAL DENDA (DARI SUPABASE)
-            // =============================
+            // ================= TOTAL DENDA =================
             _section(
               title: "Total Denda",
               child: _rowHarga("Total Denda", totalDenda),
@@ -107,24 +126,21 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
 
             const SizedBox(height: 24),
 
-            // =============================
-            // BUTTON
-            // =============================
+            // ================= BUTTON =================
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2F4157),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 onPressed: loading ? null : _selesaikanPengembalian,
                 child: loading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
+                    ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
                         "Selesaikan Pengembalian",
                         style: GoogleFonts.poppins(
@@ -139,28 +155,50 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
     );
   }
 
-  // =============================
-  // LOGIKA SUPABASE (TANPA UPDATE DENDA)
-  // =============================
+  // ================= RADIO (SUDAH FIX) =================
+  Widget _radio(String label) {
+    return RadioListTile<String>(
+      value: label,
+      groupValue: kondisiDipilih,
+      onChanged: (v) {
+        setState(() {
+          kondisiDipilih = v!;
+
+          if (v == "Rusak Ringan") {
+            dendaKerusakan = 5000;
+          } else if (v == "Rusak Berat") {
+            dendaKerusakan = 10000;
+          } else {
+            dendaKerusakan = 0;
+          }
+        });
+      },
+      title: Text(
+        label,
+        style: GoogleFonts.poppins(fontSize: 13),
+      ),
+    );
+  }
+
+  // ================= SIMPAN KE DATABASE =================
   Future<void> _selesaikanPengembalian() async {
     setState(() => loading = true);
 
-    final idPengembalian = widget.data['id_pengembalian'];
-    final idPeminjaman = widget.data['id_peminjaman'];
-    final idAlat = widget.data['peminjaman']['alat']['id_alat'];
+    final idPengembalian = dataAktif['id_pengembalian'];
+    final idPeminjaman = dataAktif['id_peminjaman'];
+    final idAlat = dataAktif['peminjaman']['alat']['id_alat'];
 
     try {
-      // 1. UPDATE pengembalian (HANYA kondisi)
+      // UPDATE kondisi + total denda
       await supabase.from('pengembalian').update({
         'kondisi_alat': kondisiDipilih,
+        'denda': totalDenda,
       }).eq('id_pengembalian', idPengembalian);
 
-      // 2. UPDATE peminjaman
       await supabase.from('peminjaman').update({
         'status_persetujuan': 'selesai',
       }).eq('id_peminjaman', idPeminjaman);
 
-      // 3. UPDATE alat
       await supabase.from('alat').update({
         'status_alat': 'Tersedia',
       }).eq('id_alat', idAlat);
@@ -175,22 +213,7 @@ class _DetailPengembalianPageState extends State<DetailPengembalianPage> {
     }
   }
 
-  // =============================
-  // WIDGET BANTUAN
-  // =============================
-  Widget _radio(String label) {
-    return RadioListTile<String>(
-      value: label,
-      groupValue: kondisiDipilih,
-      onChanged: (v) {
-        setState(() {
-          kondisiDipilih = v!;
-        });
-      },
-      title: Text(label, style: GoogleFonts.poppins(fontSize: 13)),
-    );
-  }
-
+  // ================= WIDGET BANTUAN =================
   Widget _section({
     required String title,
     required Widget child,

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'alat_list_page.dart';
 import 'tampilan.dart';
 import 'peminjaman_list.dart';
 import 'pengembalian.dart';
@@ -88,7 +86,7 @@ class _BerandaAdminState extends State<BerandaAdmin> {
                         ),
                       ),
                       Text(
-                        'Administrator',
+                        'Admin',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           color: Colors.grey,
@@ -102,87 +100,86 @@ class _BerandaAdminState extends State<BerandaAdmin> {
 
             const SizedBox(height: 30),
 
-            // ================= BARIS 1 =================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  _menuCard(
-                    icon: Symbols.group,
-                    label: "User",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const UserAdminPage(),
+                  // ===== BARIS 1 =====
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _menuCard(
+                          icon: Symbols.group,
+                          label: "User",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const UserAdminPage(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: _menuCard(
+                          icon: Symbols.category,
+                          label: "Kategori",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const TampilanKategori(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  _menuCard(
-                    icon: Symbols.inventory_2,
-                    label: "Alat",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CrudAlatPage(role: 'admin'),
+
+                  const SizedBox(height: 25),
+
+                  // ===== BARIS 2 =====
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _menuCard(
+                          icon: Symbols.assignment,
+                          label: "Peminjaman",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PeminjamanAdminPage(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  _menuCard(
-                    icon: Symbols.category,
-                    label: "Kategori",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const TampilanKategori(),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: _menuCard(
+                          icon: Symbols.assignment_return,
+                          label: "Pengembalian",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PengembalianAdminPage(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 25),
-
-            // ================= BARIS 2 =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: Row(
-                children: [
-                  _menuCard(
-                    icon: Symbols.assignment,
-                    label: "Peminjaman",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PeminjamanAdminPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  _menuCard(
-                    icon: Symbols.assignment_return,
-                    label: "Pengembalian",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PengembalianAdminPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 40),
 
             const SizedBox(height: 40),
           ],

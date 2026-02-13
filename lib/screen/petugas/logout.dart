@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_application_2/screen/login.dart';
 
@@ -27,6 +26,7 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
   Future<void> _loadProfilPetugas() async {
     try {
       final user = supabase.auth.currentUser;
+
       if (user == null) {
         setState(() => loading = false);
         return;
@@ -38,14 +38,21 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
           .eq('id', user.id)
           .maybeSingle();
 
-      final fotoPath = data?['foto'];
+      final rawFoto = data?['foto']?.toString().trim();
+      String? resolvedFoto;
+      if (rawFoto != null && rawFoto.isNotEmpty) {
+        if (rawFoto.startsWith('http://') || rawFoto.startsWith('https://')) {
+          resolvedFoto = rawFoto;
+        } else {
+          resolvedFoto =
+              supabase.storage.from('foto-profil').getPublicUrl(rawFoto);
+        }
+      }
 
       setState(() {
         nama = data?['nama'] ?? 'Petugas';
         email = user.email ?? '-';
-        fotoUrl = fotoPath != null
-            ? supabase.storage.from('foto-profil').getPublicUrl(fotoPath)
-            : null;
+        fotoUrl = resolvedFoto;
         loading = false;
       });
     } catch (e) {
@@ -56,6 +63,7 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
 
   Future<void> _logout(BuildContext context) async {
     await supabase.auth.signOut();
+
     if (!context.mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -72,28 +80,30 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        title: Text(
+        title: const Text(
           'Konfirmasi Logout',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        content: Text(
+        content: const Text(
           'Apakah Anda yakin ingin keluar dari akun petugas?',
-          style: GoogleFonts.poppins(fontSize: 13),
+          style: TextStyle(fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Batal', style: GoogleFonts.poppins()),
+            child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
             onPressed: () async {
               Navigator.pop(context);
               await _logout(context);
             },
-            child: Text(
+            child: const Text(
               'Logout',
-              style: GoogleFonts.poppins(color: Colors.white),
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -106,9 +116,9 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Pengaturan',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -124,7 +134,9 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -148,7 +160,7 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
                       /// NAMA
                       Text(
                         nama,
-                        style: GoogleFonts.poppins(
+                        style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
@@ -159,7 +171,7 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
                       /// EMAIL
                       Text(
                         email,
-                        style: GoogleFonts.poppins(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
                         ),
@@ -168,7 +180,7 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
                       const SizedBox(height: 25),
                       const Divider(),
 
-                      /// LOGOUT (DALAM CARD)
+                      /// LOGOUT BUTTON
                       SizedBox(
                         width: double.infinity,
                         height: 45,
@@ -180,9 +192,9 @@ class _PengaturanPetugasPageState extends State<PengaturanPetugasPage> {
                             ),
                           ),
                           onPressed: () => _konfirmasiLogout(context),
-                          child: Text(
+                          child: const Text(
                             'LOGOUT',
-                            style: GoogleFonts.poppins(
+                            style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),

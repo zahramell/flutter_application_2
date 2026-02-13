@@ -20,7 +20,7 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
   final List<Widget> _pages = [
     const BerandaAdmin(),
     const CrudAlatPage(role: 'admin'),
-    LogAktivitasPage (),
+    const LogAktivitasPage (),
     const PengaturanAdminPage(),
   ];
 
@@ -31,12 +31,11 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
         index: _currentIndex,
         children: _pages,
       ),
-      // MENGGUNAKAN CUSTOM CONTAINER AGAR UKURANNYA PRESISI (Tinggi 99)
       bottomNavigationBar: Container(
         width: double.infinity,
         height: 99,
         decoration: const BoxDecoration(
-          color: Color(0xFF2C3E50), // Warna Navy Gelap
+          color: Color(0xFF2C3E50),
           boxShadow: [
             BoxShadow(
               color: Colors.black12,
@@ -50,7 +49,7 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
           child: Stack(
             children: [
               Positioned(
-                top: 15, // Jarak ikon dari sisi atas container navbar
+                top: 15, 
                 left: 0,
                 right: 0,
                 child: Row(
@@ -70,7 +69,6 @@ class _MainNavigationAdminState extends State<MainNavigationAdmin> {
     );
   }
 
-  // Helper Widget untuk Item Navigasi (Meniru gaya MainScreen kamu)
   Widget _buildNavItem(IconData icon, String label, int index) {
     bool isActive = _currentIndex == index;
     return GestureDetector(

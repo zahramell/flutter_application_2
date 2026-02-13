@@ -15,6 +15,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
 
   String nama = '-';
   String email = '-';
+  String? foto;
   bool loading = true;
 
   @override
@@ -33,13 +34,14 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
 
       final data = await supabase
           .from('profiles')
-          .select('nama')
+          .select('nama, foto')
           .eq('id', user.id)
           .maybeSingle();
 
       setState(() {
         nama = data?['nama'] ?? 'Pengguna';
-        email = user.email ?? '-'; // email ambil dari auth
+        foto = data?['foto'];
+        email = user.email ?? '-';
         loading = false;
       });
     } catch (e) {
@@ -65,11 +67,13 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         title: Text(
           "Konfirmasi Logout",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         content: Text(
           "Apakah kamu yakin ingin keluar dari aplikasi?",
@@ -78,10 +82,19 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Batal", style: GoogleFonts.poppins()),
+            child: Text(
+              "Batal",
+              style: GoogleFonts.poppins(),
+            ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             onPressed: () async {
               Navigator.pop(context);
               await _logout(context);
@@ -89,7 +102,6 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
             child: Text(
               "Logout",
               style: GoogleFonts.poppins(
-                color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -102,11 +114,13 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // 🔥 background putih
       appBar: AppBar(
         title: Text(
           "Pengaturan",
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -115,10 +129,11 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Card(
+          color: Colors.grey, 
+          elevation: 3,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
-          elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: loading
@@ -127,48 +142,64 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       /// FOTO PROFIL
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 38,
-                        backgroundColor: Color(0xFF88BEFF),
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
-                        ),
+                        backgroundColor: Colors.white,
+                        backgroundImage: (foto != null && foto!.isNotEmpty)
+                            ? NetworkImage(foto!)
+                            : null,
+                        onBackgroundImageError: (_, __) {
+                          if (mounted) {
+                            setState(() => foto = null);
+                          }
+                        },
+                        child: (foto == null || foto!.isEmpty)
+                            ? const Icon(
+                                Icons.person,
+                                size: 40,
+                                color: Color(0xFF2F4157),
+                              )
+                            : null,
                       ),
-                      const SizedBox(height: 12),
 
-                      /// NAMA (SUPABASE)
+                      const SizedBox(height: 15),
+
+                      /// NAMA
                       Text(
                         nama,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                          fontSize: 16,
+                          color: const Color(0xFF2F4157),
                         ),
                       ),
+
                       const SizedBox(height: 4),
 
-                      /// EMAIL (SUPABASE)
+                      /// EMAIL
                       Text(
                         email,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: Colors.black87,
                         ),
                       ),
 
                       const SizedBox(height: 25),
                       const Divider(),
 
-                      /// LOGOUT (DI DALAM CARD)
+                      const SizedBox(height: 15),
+
+                      /// LOGOUT BUTTON
                       SizedBox(
                         width: double.infinity,
                         height: 45,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: () => _showLogoutDialog(context),
@@ -176,7 +207,7 @@ class _PengaturanScreenState extends State<PengaturanScreen> {
                             "LOGOUT",
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              fontSize: 14,
                             ),
                           ),
                         ),

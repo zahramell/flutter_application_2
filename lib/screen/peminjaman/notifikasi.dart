@@ -6,12 +6,10 @@ class NotifikasiPetugasPage extends StatefulWidget {
   const NotifikasiPetugasPage({super.key});
 
   @override
-  State<NotifikasiPetugasPage> createState() =>
-      _NotifikasiPetugasPageState();
+  State<NotifikasiPetugasPage> createState() => _NotifikasiPetugasPageState();
 }
 
-class _NotifikasiPetugasPageState
-    extends State<NotifikasiPetugasPage> {
+class _NotifikasiPetugasPageState extends State<NotifikasiPetugasPage> {
   final supabase = Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> fetchNotifikasi() async {
@@ -43,7 +41,7 @@ class _NotifikasiPetugasPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F6F6),
+      backgroundColor: Colors.white, // background putih
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -60,7 +58,9 @@ class _NotifikasiPetugasPageState
         future: fetchNotifikasi(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -75,74 +75,74 @@ class _NotifikasiPetugasPageState
           final data = snapshot.data!;
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             itemCount: data.length,
             itemBuilder: (context, i) {
               final d = data[i];
-              final user = d['profiles'];
-              final alat = d['alat'];
+              final user = d['profiles'] ?? {};
+              final alat = d['alat'] ?? {};
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 15),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              return Center(
+                child: SizedBox(
+                  width: 329, // lebar tetap 329
+                  child: Card(
+                    color: Colors.white,
+                    elevation: 4,
+                    shadowColor: Colors.black26,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 22,
-                      backgroundImage:
-                          user['foto'] != null &&
-                                  user['foto'].toString().isNotEmpty
-                              ? NetworkImage(user['foto'])
-                              : null,
-                      child: user['foto'] == null
-                          ? const Icon(Icons.person)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                    margin: const EdgeInsets.only(bottom: 15),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
                         children: [
-                          Text(
-                            user['nama'],
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundImage: user['foto'] != null &&
+                                    user['foto'].toString().isNotEmpty
+                                ? NetworkImage(user['foto'])
+                                : null,
+                            child: user['foto'] == null
+                                ? const Icon(Icons.person)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user['nama'] ?? "User",
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Mengajukan: ${alat['nama_alat'] ?? "-"}",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  "Tanggal: ${formatTanggal(d['tanggal_pinjam'])}",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Mengajukan: ${alat['nama_alat']}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            "Tanggal: ${formatTanggal(d['tanggal_pinjam'])}",
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                          ),
+                          const Icon(
+                            Icons.notifications_active,
+                            color: Colors.orange,
+                          )
                         ],
                       ),
                     ),
-                    const Icon(
-                      Icons.notifications_active,
-                      color: Colors.orange,
-                    )
-                  ],
+                  ),
                 ),
               );
             },

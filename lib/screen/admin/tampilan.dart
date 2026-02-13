@@ -17,7 +17,7 @@ class _UserAdminPageState extends State<UserAdminPage> {
   Future<List<Map<String, dynamic>>> fetchUsers() async {
     final res = await supabase
         .from('profiles')
-        .select('id, nama, email, role, foto')
+        .select('id, nama, role, foto')
         .order('nama', ascending: true);
 
     return List<Map<String, dynamic>>.from(res);
@@ -167,14 +167,6 @@ class _UserAdminPageState extends State<UserAdminPage> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      u['email'] ?? '-',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.grey,
                                       ),
                                     ),
                                     const SizedBox(height: 4),

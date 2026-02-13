@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'beranda.dart';
 import 'aktivitas.dart';
-import 'profil.dart';
+import 'logout.dart';
 import 'tab_index_notifier.dart';
 import 'notifikasi.dart';
 
@@ -21,8 +21,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const BerandaScreen(role: 'peminjam'),
     const AktivitasScreen(),
-    NotifikasiPetugasPage(),
-    const PengaturanScreen(),
+    const NotifikasiPetugasPage(),
+    const PengaturanPeminjamPage(),
   ];
 
   @override

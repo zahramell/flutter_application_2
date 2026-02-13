@@ -19,9 +19,9 @@ class _MainNavigationPetugasState extends State<MainNavigationPetugas> {
   // Daftar halaman untuk setiap menu navbar
   final List<Widget> _pages = [
     const BerandaPetugas(),
-    PersetujuanPage(),
-    LaporanPage(),
-    PengaturanPetugasPage(),
+    const PersetujuanPage(),
+    const LaporanPage(),
+    const PengaturanPetugasPage(),
   ];
 
   @override

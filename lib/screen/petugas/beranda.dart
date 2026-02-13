@@ -97,15 +97,18 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                ), // ✅ tidak ada padding atas
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ===== HEADER DASHBOARD =====
-
                     Container(
                       width: double.infinity,
-                      height: 160,
+                      height: 190,
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       decoration: const BoxDecoration(
                         color: Color(0xFFD7E7F0),
@@ -136,7 +139,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2F4157),
+                                  color: const Color(0xFF2F4157),
                                 ),
                               ),
                               Text(
@@ -151,6 +154,8 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 20),
 
                     const SizedBox(height: 20),
 
@@ -232,7 +237,8 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                                                   : null,
                                           child: d['profiles']['foto'] == null
                                               ? const Icon(Icons.person,
-                                                  color: Colors.grey)
+                                                  color: Color.fromARGB(
+                                                      255, 255, 255, 255))
                                               : null,
                                         ),
                                         const SizedBox(width: 12),
@@ -267,6 +273,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                                           child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.green,
+                                              foregroundColor: Colors.white,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(12),
@@ -283,6 +290,7 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
                                           child: ElevatedButton(
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor: Colors.red,
+                                              foregroundColor: Colors.white,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(12),
@@ -322,14 +330,24 @@ class _BerandaPetugasState extends State<BerandaPetugas> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(angka,
-                style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold)),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(color: Colors.white)),
+            Text(
+              angka,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
